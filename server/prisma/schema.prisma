@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Product {
+  product_id   Int      @id @default(autoincrement())
+  product_name String
+  sku          String   @unique
+  description  String?
+  unit_price   Float
+  supplier     String
+  category_id Int
+
+  category     Category @relation(fields: [category_id], references: [category_id])
+
+  stock Stock?
+
+  stockMovements StockMovement[]
+  stockAlerts    StockAlert[]
+
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+}
+
+model Category {
+  category_id   Int      @id @default(autoincrement())
+  category_name String
+  description   String?
+
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  products      Product[]
+}
+
+model Stock {
+  stock_id      Int      @id @default(autoincrement())
+  product_id    Int      @unique
+
+  quantity      Int
+  reorder_level Int
+
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  stockMovements StockMovement[]
+  stockAlerts    StockAlert[]
+
+  product        Product @relation(fields: [product_id], references: [product_id])
+}
+
+model User {
+  user_id    Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  password   String
+  role       String
+
+  stockMovements StockMovement[]
+  auditLogs      AuditLog[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model StockMovement {
+  movement_id   Int    @id @default(autoincrement())
+
+  product_id    Int
+  stock_id      Int
+
+  movement_type String
+  quantity      Int
+  reference     String?
+  created_by    Int
+  remarks       String?
+
+  created_at    DateTime @default(now())
+
+  product Product @relation(fields: [product_id], references: [product_id])
+  stock   Stock   @relation(fields: [stock_id], references: [stock_id])
+  user    User    @relation(fields: [created_by], references: [user_id])
+}
+
+model StockAlert {
+  alert_id         Int     @id @default(autoincrement())
+
+  product_id       Int
+  stock_id         Int
+
+  current_quantity Int
+  alert_type       String
+  is_resolved      Boolean @default(false)
+
+  created_at       DateTime @default(now())
+
+  product Product @relation(fields: [product_id], references: [product_id])
+  stock   Stock   @relation(fields: [stock_id], references: [stock_id])
+}
+
+model AuditLog {
+  log_id      Int      @id @default(autoincrement())
+
+  user_id     Int
+
+  action      String
+  entity_type String
+  entity_id   Int
+
+  old_values  String?
+  new_values  String?
+
+  created_at  DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [user_id])
+}
