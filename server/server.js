@@ -2,9 +2,13 @@ const express = require("express");
 
 const app = express();
 
+app.use(express.json());
+
 const PORT = 3000;
 
 const prisma = require("./src/config/prisma");
+
+const productRoutes = require("./src/routes/productRoutes");
 
 // Root Route
 app.get("/", (req, res) => {
@@ -12,24 +16,7 @@ app.get("/", (req, res) => {
 });
 
 // Products API
-app.get("/api/products", (req, res) => {
-    res.json([
-        {
-            id: 1,
-            name: "Keyboard",
-            category: "Electronics",
-            quantity: 10,
-            price: 1200
-        },
-        {
-            id: 2,
-            name: "Mouse",
-            category: "Electronics",
-            quantity: 15,
-            price: 600
-        }
-    ]);
-});
+app.use("/api/products", productRoutes);
 
 app.get("/api/test-db", async (req, res) => {
     try {
