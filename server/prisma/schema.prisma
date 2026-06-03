@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Product {
-  supplier       String?
+  supplier_name  String?
   category_id    Int
   created_at     DateTime        @default(now())
   description    String?
