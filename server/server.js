@@ -10,6 +10,8 @@ const prisma = require("./src/config/prisma");
 
 const productRoutes = require("./src/routes/productRoutes");
 
+const categoryRoutes = require("./src/routes/categoryRoutes");
+
 // Root Route
 app.get("/", (req, res) => {
     res.send("Inventory Management Software Backend Running");
@@ -17,6 +19,9 @@ app.get("/", (req, res) => {
 
 // Products API
 app.use("/api/products", productRoutes);
+
+// Categories API
+app.use("/api/categories", categoryRoutes);
 
 app.get("/api/test-db", async (req, res) => {
     try {
