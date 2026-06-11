@@ -17,6 +17,8 @@ const productRoutes = require("./src/routes/productRoutes");
 
 const categoryRoutes = require("./src/routes/categoryRoutes");
 
+const stockRoutes = require("./src/routes/stockRoutes");
+
 // Root Route
 app.get("/", (req, res) => {
     res.send("Inventory Management Software Backend Running");
@@ -27,6 +29,9 @@ app.use("/api/products", productRoutes);
 
 // Categories API
 app.use("/api/categories", categoryRoutes);
+
+//Stocks API
+app.use("/api/stock", stockRoutes);
 
 app.get("/api/test-db", async (req, res) => {
     try {

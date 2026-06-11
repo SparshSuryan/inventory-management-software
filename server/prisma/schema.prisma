@@ -63,10 +63,10 @@ model StockMovement {
   movement_type String
   quantity      Int
   reference     String?
-  created_by    Int
+  created_by    Int?
   remarks       String?
   created_at    DateTime @default(now())
-  user          User     @relation(fields: [created_by], references: [user_id])
+  user          User?     @relation(fields: [created_by], references: [user_id])
   product       Product  @relation(fields: [product_id], references: [product_id])
   stock         Stock    @relation(fields: [stock_id], references: [stock_id])
 }
