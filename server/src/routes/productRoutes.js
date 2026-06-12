@@ -7,6 +7,7 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
+  bulkCreateProducts,
 } = require("../controllers/productControllers");
 
 const {
@@ -17,6 +18,7 @@ const {
 const validate = require("../middleware/validate");
 
 router.get("/", getAllProducts);
+router.post("/bulk", bulkCreateProducts);
 router.get("/:id", getProductById);
 router.post("/", createProductValidation, validate, createProduct);
 router.put("/:id", updateProductValidation, validate, updateProduct);

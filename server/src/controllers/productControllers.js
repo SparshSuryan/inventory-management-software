@@ -200,10 +200,109 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+// POST /api/products/bulk
+const bulkCreateProducts = async (req, res) => {
+  try {
+    const { products } = req.body;
+
+    if (!products || !Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No products provided",
+      });
+    }
+
+    // Validate each product
+    const errors = [];
+    products.forEach((p, index) => {
+      if (!p.product_name) errors.push(`Row ${index + 1}: product_name is required`);
+      if (!p.sku) errors.push(`Row ${index + 1}: sku is required`);
+      if (!p.unit_price) errors.push(`Row ${index + 1}: unit_price is required`);
+      if (!p.category_id) errors.push(`Row ${index + 1}: category_id is required`);
+    });
+
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors,
+      });
+    }
+
+    // Create each product + stock record in a transaction
+    const results = [];
+
+    for (const p of products) {
+      const result = await prisma.$transaction(async (tx) => {
+        // Create product
+        const product = await tx.product.create({
+          data: {
+            product_name: p.product_name,
+            sku: String(p.sku),
+            description: p.description || null,
+            unit_price: parseFloat(p.unit_price),
+            supplier: p.supplier || null,
+            category_id: parseInt(p.category_id),
+          },
+        });
+
+        // Create stock record for this product
+        const stock = await tx.stock.create({
+          data: {
+            product_id: product.product_id,
+            quantity: parseInt(p.quantity) || 0,
+            reorder_level: parseInt(p.reorder_level) || 5,
+          },
+        });
+
+        // Create stock movement record if quantity > 0
+        if (parseInt(p.quantity) > 0) {
+          await tx.stockMovement.create({
+            data: {
+              product_id: product.product_id,
+              stock_id: stock.stock_id,
+              movement_type: "IN",
+              quantity: parseInt(p.quantity),
+              reference: "Bulk upload",
+              remarks: "Initial stock from bulk import",
+              created_by: null,
+            },
+          });
+        }
+
+        return product;
+      });
+
+      results.push(result);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `${results.length} products imported successfully with stock records`,
+      data: results,
+    });
+  } catch (error) {
+    console.error(error);
+
+    if (error.code === "P2002") {
+      return res.status(400).json({
+        success: false,
+        message: "One or more SKUs already exist in the database",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to bulk import products",
+    });
+  }
+};
+
 module.exports = {
   getAllProducts,  //getProduct
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
+  bulkCreateProducts,
 };
