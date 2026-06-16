@@ -21,6 +21,8 @@ model Product {
   stock          Stock?
   stockAlerts    StockAlert[]
   stockMovements StockMovement[]
+  receipts       Receipt[]
+  inventoryTransfers InventoryTransfer[]
 }
 
 model Category {
@@ -30,6 +32,8 @@ model Category {
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
   products      Product[]
+  transfersFrom InventoryTransfer[] @relation("FromCategory")
+  transfersTo   InventoryTransfer[] @relation("ToCategory")
 }
 
 model Stock {
@@ -54,6 +58,8 @@ model User {
   updated_at     DateTime        @updatedAt
   auditLogs      AuditLog[]
   stockMovements StockMovement[]
+  receipts       Receipt[]
+  inventoryTransfers InventoryTransfer[]
 }
 
 model StockMovement {
@@ -93,4 +99,38 @@ model AuditLog {
   new_values  String?
   created_at  DateTime @default(now())
   user        User     @relation(fields: [user_id], references: [user_id])
+}
+
+model Receipt {
+  receipt_id     Int      @id @default(autoincrement())
+  receipt_number String   @unique
+  product_id     Int
+  supplier       String
+  quantity       Int
+  unit_cost      Float?
+  total_cost     Float?
+  received_date  DateTime @default(now())
+  remarks        String?
+  created_by     Int?
+  created_at     DateTime @default(now())
+
+  product Product @relation(fields: [product_id], references: [product_id])
+  user    User?   @relation(fields: [created_by], references: [user_id])
+}
+
+model InventoryTransfer {
+  transfer_id     Int      @id @default(autoincrement())
+  transfer_number String   @unique
+  product_id      Int
+  from_category   Int
+  to_category     Int
+  quantity        Int
+  remarks         String?
+  created_by      Int?
+  created_at      DateTime @default(now())
+
+  product          Product  @relation(fields: [product_id], references: [product_id])
+  fromCategory     Category @relation("FromCategory", fields: [from_category], references: [category_id])
+  toCategory       Category @relation("ToCategory", fields: [to_category], references: [category_id])
+  user             User?    @relation(fields: [created_by], references: [user_id])
 }

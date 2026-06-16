@@ -171,7 +171,6 @@ const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Check if product exists first
     const existing = await prisma.product.findUnique({
       where: { product_id: parseInt(id) },
     });
@@ -182,6 +181,19 @@ const deleteProduct = async (req, res) => {
         message: "Product not found",
       });
     }
+
+    // Delete in correct order — children first, then parent
+    await prisma.stockMovement.deleteMany({
+      where: { product_id: parseInt(id) },
+    });
+
+    await prisma.stockAlert.deleteMany({
+      where: { product_id: parseInt(id) },
+    });
+
+    await prisma.stock.deleteMany({
+      where: { product_id: parseInt(id) },
+    });
 
     await prisma.product.delete({
       where: { product_id: parseInt(id) },

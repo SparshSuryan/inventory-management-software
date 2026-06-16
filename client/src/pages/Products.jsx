@@ -1,3 +1,4 @@
+import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
@@ -14,6 +15,7 @@ const emptyForm = {
 };
 
 function Products() {
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,8 +25,13 @@ function Products() {
   const [editingId, setEditingId] = useState(null);
   const [formError, setFormError] = useState(null);
   const [formSuccess, setFormSuccess] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
   const [showBulkModal, setShowBulkModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterSupplier, setFilterSupplier] = useState("");
+  const [sortBy, setSortBy] = useState("");
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [showSortPanel, setShowSortPanel] = useState(false);
 
   // Stats
   const [stats, setStats] = useState({
@@ -95,6 +102,16 @@ function Products() {
     fetchCategories();
   }, []);
 
+  useEffect(() => {
+    if (location.state?.openAddForm) {
+      setFormData({ ...emptyForm, sku: location.state.prefillSku || "" });
+      setEditingId(null);
+      setFormError(null);
+      setFormSuccess(null);
+      setShowForm(true);
+    }
+  }, [location.state]);
+  
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -167,10 +184,36 @@ function Products() {
     setFormError(null);
   };
 
-  const filteredProducts = products.filter((p) =>
-    p.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Search — by name, category, supplier
+const filteredProducts = products
+.filter((p) => {
+  const search = searchTerm.toLowerCase();
+  const matchesSearch =
+    !searchTerm ||
+    p.product_name.toLowerCase().includes(search) ||
+    p.category?.category_name?.toLowerCase().includes(search) ||
+    (p.supplier || "").toLowerCase().includes(search);
+
+  const matchesCategory =
+    !filterCategory ||
+    p.category?.category_name === filterCategory;
+
+  const matchesSupplier =
+    !filterSupplier ||
+    (p.supplier || "").toLowerCase().includes(filterSupplier.toLowerCase());
+
+  return matchesSearch && matchesCategory && matchesSupplier;
+})
+.sort((a, b) => {
+  if (sortBy === "id_asc") return a.product_id - b.product_id;
+  if (sortBy === "id_desc") return b.product_id - a.product_id;
+  if (sortBy === "price_asc") return a.unit_price - b.unit_price;
+  if (sortBy === "price_desc") return b.unit_price - a.unit_price;
+  return 0;
+});
+
+// Get unique suppliers for filter dropdown
+const uniqueSuppliers = [...new Set(products.map((p) => p.supplier).filter(Boolean))];
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#fcf6db" }}>
@@ -188,73 +231,180 @@ function Products() {
         <div style={{ padding: "24px", flex: 1, backgroundColor: "#fcf6db" }}>
 
           {/* KPI Cards Row */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr 1fr auto",
-            gap: "12px",
-            marginBottom: "20px",
-            alignItems: "stretch",
-          }}>
+<div style={{
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr 1fr 1fr auto",
+  gap: "12px",
+  marginBottom: "20px",
+  alignItems: "stretch",
+}}>
+  {/* Total Products */}
+  <div style={kpiCard}>
+    <div style={kpiLabel}>Total Products</div>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginTop: "8px" }}>
+      <span style={{ fontSize: "26px" }}>📦</span>
+      <span style={kpiValue}>{stats.total}</span>
+    </div>
+  </div>
 
-            {/* Total Products */}
-            <div style={kpiCard}>
-              <div style={kpiLabel}>Total Products</div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginTop: "8px" }}>
-                <span style={{ fontSize: "26px" }}>📦</span>
-                <span style={kpiValue}>{stats.total}</span>
-              </div>
-            </div>
+  {/* Low Stock */}
+  <div style={kpiCard}>
+    <div style={kpiLabel}>Low Stock Items</div>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginTop: "8px" }}>
+      <span style={{ fontSize: "26px" }}>⚠️</span>
+      <span style={{ ...kpiValue, color: "#BA7517" }}>{stats.lowStock}</span>
+    </div>
+  </div>
 
-            {/* Low Stock */}
-            <div style={kpiCard}>
-              <div style={kpiLabel}>Low Stock Items</div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginTop: "8px" }}>
-                <span style={{ fontSize: "26px" }}>⚠️</span>
-                <span style={{ ...kpiValue, color: "#BA7517" }}>{stats.lowStock}</span>
-              </div>
-            </div>
+  {/* Out of Stock */}
+  <div style={kpiCard}>
+    <div style={kpiLabel}>Out of Stock</div>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginTop: "8px" }}>
+      <span style={{ fontSize: "26px" }}>❌</span>
+      <span style={{ ...kpiValue, color: "#d9534f" }}>{stats.outOfStock}</span>
+    </div>
+  </div>
 
-            {/* Out of Stock */}
-            <div style={kpiCard}>
-              <div style={kpiLabel}>Out of Stock</div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginTop: "8px" }}>
-                <span style={{ fontSize: "26px" }}>❌</span>
-                <span style={{ ...kpiValue, color: "#d9534f" }}>{stats.outOfStock}</span>
-              </div>
-            </div>
+  {/* Total Value */}
+  <div style={kpiCard}>
+    <div style={kpiLabel}>Total Inventory Value</div>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "8px" }}>
+      <span style={kpiValue}>₹{stats.totalValue.toLocaleString()}</span>
+    </div>
+  </div>
 
-            {/* Total Value */}
-            <div style={kpiCard}>
-              <div style={kpiLabel}>Total Inventory Value</div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "8px" }}>
-                <span style={kpiValue}>
-                  ₹{stats.totalValue.toLocaleString()}
-                </span>
-              </div>
-            </div>
+  {/* Buttons */}
+  <div style={{
+    display: "flex", flexDirection: "column",
+    gap: "8px", justifyContent: "center",
+    padding: "12px",
+    backgroundColor: "white",
+    border: "1.5px solid #004aad",
+    borderRadius: "10px",
+    minWidth: "200px",
+    position: "relative",
+  }}>
+    {/* Filter + Sort row */}
+    <div style={{ display: "flex", gap: "8px" }}>
+      <button
+        style={btnFilter}
+        onClick={() => {
+          setShowFilterPanel(!showFilterPanel);
+          setShowSortPanel(false);
+        }}
+      >
+        ▼ Filter
+      </button>
+      <button
+        style={btnFilter}
+        onClick={() => {
+          setShowSortPanel(!showSortPanel);
+          setShowFilterPanel(false);
+        }}
+      >
+        ↕ Sort
+      </button>
+    </div>
 
-            {/* Buttons */}
-            <div style={{
-              display: "flex", flexDirection: "column",
-              gap: "8px", justifyContent: "center",
-              padding: "12px",
-              backgroundColor: "white",
-              border: "1.5px solid #1a3c5e",
-              borderRadius: "10px",
-              minWidth: "180px",
-            }}>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button style={btnFilter}>▼ Filter</button>
-                <button style={btnFilter}>↕ Sort</button>
-              </div>
-              <button onClick={handleAddClick} style={btnAdd}>
-                Add Product +
-              </button>
-              <button style={btnUpload} onClick={() => setShowBulkModal(true)}>
-                Upload Bulk +
-              </button>
-            </div>
+    {/* Filter Panel */}
+    {showFilterPanel && (
+      <div style={{
+        position: "absolute", top: "110px", left: "0",
+        backgroundColor: "white", border: "1px solid #ccc",
+        borderRadius: "8px", padding: "14px",
+        zIndex: 100, width: "220px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+      }}>
+        <div style={{ fontWeight: "600", color: "#004aad", marginBottom: "10px", fontSize: "13px" }}>
+          Filter Products
+        </div>
+
+        <label style={labelStyle}>Category</label>
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          style={{ ...inputStyle, marginBottom: "10px" }}
+        >
+          <option value="">All Categories</option>
+          {categories.map((c) => (
+            <option key={c.category_id} value={c.category_name}>
+              {c.category_name}
+            </option>
+          ))}
+        </select>
+
+        <label style={labelStyle}>Supplier</label>
+        <select
+          value={filterSupplier}
+          onChange={(e) => setFilterSupplier(e.target.value)}
+          style={{ ...inputStyle, marginBottom: "10px" }}
+        >
+          <option value="">All Suppliers</option>
+          {uniqueSuppliers.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+
+        <button
+          onClick={() => {
+            setFilterCategory("");
+            setFilterSupplier("");
+          }}
+          style={{ ...btnFilter, width: "100%", marginTop: "4px" }}
+        >
+          Clear Filters
+        </button>
+      </div>
+    )}
+
+    {/* Sort Panel */}
+    {showSortPanel && (
+      <div style={{
+        position: "absolute", top: "110px", left: "0",
+        backgroundColor: "white", border: "1px solid #ccc",
+        borderRadius: "8px", padding: "14px",
+        zIndex: 100, width: "220px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+      }}>
+        <div style={{ fontWeight: "600", color: "#004aad", marginBottom: "10px", fontSize: "13px" }}>
+          Sort Products
+        </div>
+        {[
+          { value: "", label: "Default" },
+          { value: "id_asc", label: "Product ID — Low to High" },
+          { value: "id_desc", label: "Product ID — High to Low" },
+          { value: "price_asc", label: "Price — Low to High" },
+          { value: "price_desc", label: "Price — High to Low" },
+        ].map((opt) => (
+          <div
+            key={opt.value}
+            onClick={() => {
+              setSortBy(opt.value);
+              setShowSortPanel(false);
+            }}
+            style={{
+              padding: "8px 10px", borderRadius: "6px",
+              cursor: "pointer", fontSize: "13px",
+              backgroundColor: sortBy === opt.value ? "#e6f0ff" : "transparent",
+              color: sortBy === opt.value ? "#004aad" : "#333",
+              fontWeight: sortBy === opt.value ? "600" : "400",
+              marginBottom: "2px",
+            }}
+          >
+            {sortBy === opt.value ? "✓ " : ""}{opt.label}
           </div>
+        ))}
+      </div>
+    )}
+
+    <button onClick={handleAddClick} style={btnAdd}>
+      Add Product +
+    </button>
+    <button style={btnUpload} onClick={() => setShowBulkModal(true)}>
+      Upload Bulk +
+    </button>
+  </div>
+</div>
 
           {/* Messages */}
           {formSuccess && (
@@ -337,6 +487,55 @@ function Products() {
             </div>
           )}
 
+          {/* Active filters display */}
+{(filterCategory || filterSupplier || sortBy) && (
+  <div style={{
+    display: "flex", gap: "8px", flexWrap: "wrap",
+    marginBottom: "10px", alignItems: "center",
+  }}>
+    <span style={{ fontSize: "12px", color: "#666" }}>Active:</span>
+    {filterCategory && (
+      <span style={{
+        backgroundColor: "#e6f0ff", color: "#004aad",
+        padding: "3px 10px", borderRadius: "12px",
+        fontSize: "12px", fontWeight: "500",
+      }}>
+        Category: {filterCategory}
+        <button
+          onClick={() => setFilterCategory("")}
+          style={{ background: "none", border: "none", cursor: "pointer", marginLeft: "4px", color: "#004aad" }}
+        >✕</button>
+      </span>
+    )}
+    {filterSupplier && (
+      <span style={{
+        backgroundColor: "#e6f0ff", color: "#004aad",
+        padding: "3px 10px", borderRadius: "12px",
+        fontSize: "12px", fontWeight: "500",
+      }}>
+        Supplier: {filterSupplier}
+        <button
+          onClick={() => setFilterSupplier("")}
+          style={{ background: "none", border: "none", cursor: "pointer", marginLeft: "4px", color: "#004aad" }}
+        >✕</button>
+      </span>
+    )}
+    {sortBy && (
+      <span style={{
+        backgroundColor: "#e6f0ff", color: "#004aad",
+        padding: "3px 10px", borderRadius: "12px",
+        fontSize: "12px", fontWeight: "500",
+      }}>
+        Sort: {sortBy.replace("_", " ").replace("asc", "↑").replace("desc", "↓")}
+        <button
+          onClick={() => setSortBy("")}
+          style={{ background: "none", border: "none", cursor: "pointer", marginLeft: "4px", color: "#004aad" }}
+        >✕</button>
+      </span>
+    )}
+  </div>
+)}
+
           {/* Products Table */}
           <div style={{
             backgroundColor: "white",
@@ -359,7 +558,11 @@ function Products() {
             ) : error ? (
               <p style={{ padding: "20px", color: "red" }}>{error}</p>
             ) : filteredProducts.length === 0 ? (
-              <p style={{ padding: "20px", textAlign: "center" }}>{searchTerm ? `No products found for "${searchTerm}"` : "No products found. Add your first product!"}</p>
+              <p style={{ padding: "20px", textAlign: "center", color: "#666" }}>
+                {searchTerm || filterCategory || filterSupplier
+                  ? `No products found matching your search or filters`
+                  : "No products found. Add your first product!"}
+              </p>
             ) : (
               <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #e8d9b0", borderRadius: "8px", overflow: "hidden" }}>
                 <thead>
