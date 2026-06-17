@@ -23,6 +23,7 @@ model Product {
   stockMovements StockMovement[]
   receipts       Receipt[]
   inventoryTransfers InventoryTransfer[]
+  issues         Issue[]
 }
 
 model Category {
@@ -133,4 +134,19 @@ model InventoryTransfer {
   fromCategory     Category @relation("FromCategory", fields: [from_category], references: [category_id])
   toCategory       Category @relation("ToCategory", fields: [to_category], references: [category_id])
   user             User?    @relation(fields: [created_by], references: [user_id])
+}
+
+model Issue {
+  issue_id     Int      @id @default(autoincrement())
+  issue_number String   @unique
+  product_id   Int
+  issue_type   String   // LOW_STOCK, OUT_OF_STOCK, SURPLUS_STOCK, DAMAGED_STOCK
+  stage        String   // Raw Material, Work In Progress, Finished Product
+  description  String?
+  status       String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED
+  resolved_at  DateTime?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  product Product @relation(fields: [product_id], references: [product_id])
 }

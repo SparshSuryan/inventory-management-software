@@ -134,9 +134,6 @@ function Sidebar() {
               <div style={dropdownItemStyle("/inventory/status")} onClick={() => navigate("/inventory/status")}>
                 Stock Overview
               </div>
-              <div style={dropdownItemStyle("/inventory/issues")} onClick={() => navigate("/inventory/issues")}>
-                Issues Management
-              </div>
             </div>
           )}
         </div>

@@ -23,6 +23,10 @@ const receiptRoutes = require("./src/routes/receiptRoutes");
 
 const transferRoutes = require("./src/routes/transferRoutes");
 
+const issueRoutes = require("./src/routes/issueRoutes");
+
+const dashboardRoutes = require("./src/routes/dashboardRoutes");
+
 // Root Route
 app.get("/", (req, res) => {
     res.send("Inventory Management Software Backend Running");
@@ -42,6 +46,12 @@ app.use("/api/receipts", receiptRoutes);
 
 //Inventory Transfer API
 app.use("/api/transfers", transferRoutes);
+
+//Issues API
+app.use("/api/issues", issueRoutes);
+
+//Dashboard API
+app.use("/api/dashboard", dashboardRoutes);
 
 app.get("/api/test-db", async (req, res) => {
     try {
