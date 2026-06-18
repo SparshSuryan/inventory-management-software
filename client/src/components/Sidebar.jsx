@@ -5,7 +5,6 @@ function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [receiptOpen, setReceiptOpen] = useState(false);
-  const [inventoryOpen, setInventoryOpen] = useState(false);
 
   const isActive = (path) => location.pathname === path;
 
@@ -116,27 +115,13 @@ function Sidebar() {
         </div>
 
         {/* Inventory Status dropdown */}
-        <div>
-          <div
-            style={{
-              ...navItemStyle("/inventory"),
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-            onClick={() => setInventoryOpen(!inventoryOpen)}
-          >
-            <span>Inventory Status</span>
-            <span style={{ fontSize: "11px" }}>{inventoryOpen ? "▲" : "▼"}</span>
-          </div>
-          {inventoryOpen && (
-            <div>
-              <div style={dropdownItemStyle("/inventory/status")} onClick={() => navigate("/inventory/status")}>
-                Stock Overview
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Inventory Status — direct link */}
+<div
+  style={navItemStyle("/inventory")}
+  onClick={() => navigate("/inventory")}
+>
+  Inventory Status
+</div>
 
       </nav>
     </div>

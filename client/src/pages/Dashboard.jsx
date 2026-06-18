@@ -106,7 +106,7 @@ function Dashboard() {
             <div style={{ backgroundColor: "white", borderRadius: "12px", border: "1.5px solid #d9534f", padding: "16px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
                 <h3 style={{ color: "#d9534f", fontSize: "15px", margin: 0 }}>🔴 Unresolved Issues ({data.issues.open + data.issues.inProgress})</h3>
-                <button onClick={() => navigate("/issues")} style={{ backgroundColor: "#d9534f", color: "white", border: "none", padding: "4px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "12px" }}>
+                <button onClick={() => navigate("/inventory/issues")} style={{ backgroundColor: "#d9534f", color: "white", border: "none", padding: "4px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "12px" }}>
                   View All
                 </button>
               </div>

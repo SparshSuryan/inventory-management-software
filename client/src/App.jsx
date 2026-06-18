@@ -6,11 +6,12 @@ import Receipts from "./pages/Receipts";
 import InventoryTransfers from "./pages/InventoryTransfers";
 import IssuesManagement from "./pages/IssuesManagement";
 import Dashboard from "./pages/Dashboard";
+import InventoryStatus from "./pages/InventoryStatus";
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Products />} />
+      <Route path="/" element={<Dashboard />} />
       <Route path="/products" element={<Products />} />
       <Route path="/stock" element={<StockManagement />} />
       <Route path="/stock/:productId/movements" element={<StockMovements />} />
@@ -19,6 +20,7 @@ function App() {
       <Route path="/inventory/issues" element={<IssuesManagement />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/" element={<Dashboard />} />
+      <Route path="/inventory" element={<InventoryStatus />} />
     </Routes>
   );
 }

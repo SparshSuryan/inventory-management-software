@@ -27,6 +27,8 @@ const issueRoutes = require("./src/routes/issueRoutes");
 
 const dashboardRoutes = require("./src/routes/dashboardRoutes");
 
+const inventoryStatusRoutes = require("./src/routes/inventoryStatusRoutes");
+
 // Root Route
 app.get("/", (req, res) => {
     res.send("Inventory Management Software Backend Running");
@@ -52,6 +54,9 @@ app.use("/api/issues", issueRoutes);
 
 //Dashboard API
 app.use("/api/dashboard", dashboardRoutes);
+
+//Inventory Status API
+app.use("/api/inventory-status", inventoryStatusRoutes);
 
 app.get("/api/test-db", async (req, res) => {
     try {
