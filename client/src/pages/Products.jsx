@@ -4,6 +4,8 @@ import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import BulkUploadModal from "../components/BulkUploadModal";
+import { formatINR } from "../utils/formatCurrency";
+import { exportToCSV } from "../utils/exportCSV";
 
 const emptyForm = {
   product_name: "",
@@ -111,7 +113,7 @@ function Products() {
       setShowForm(true);
     }
   }, [location.state]);
-  
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -212,6 +214,19 @@ const filteredProducts = products
   return 0;
 });
 
+const handleExport = () => {
+  const headers = [
+    { label: "Product ID", key: "product_id" },
+    { label: "Product Name", key: "product_name" },
+    { label: "SKU", key: "sku" },
+    { label: "Category", key: "category.category_name" },
+    { label: "Unit Price", key: "unit_price" },
+    { label: "Supplier", key: "supplier" },
+    { label: "Description", key: "description" },
+  ];
+  exportToCSV("products", headers, filteredProducts);
+};
+
 // Get unique suppliers for filter dropdown
 const uniqueSuppliers = [...new Set(products.map((p) => p.supplier).filter(Boolean))];
 
@@ -269,7 +284,7 @@ const uniqueSuppliers = [...new Set(products.map((p) => p.supplier).filter(Boole
   <div style={kpiCard}>
     <div style={kpiLabel}>Total Inventory Value</div>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "8px" }}>
-      <span style={kpiValue}>₹{stats.totalValue.toLocaleString()}</span>
+      <span style={kpiValue}>{formatINR(stats.totalValue)}</span>
     </div>
   </div>
 
@@ -403,6 +418,9 @@ const uniqueSuppliers = [...new Set(products.map((p) => p.supplier).filter(Boole
     <button style={btnUpload} onClick={() => setShowBulkModal(true)}>
       Upload Bulk +
     </button>
+    <button onClick={handleExport} style={btnExport}>
+  Export CSV ↓
+</button>
   </div>
 </div>
 
@@ -591,7 +609,7 @@ const uniqueSuppliers = [...new Set(products.map((p) => p.supplier).filter(Boole
                       <td style={tdStyle}>{product.sku}</td>
                       <td style={tdStyle}>{product.category?.category_name || "N/A"}</td>
                       <td style={tdStyle}>{product.supplier || "—"}</td>
-                      <td style={tdStyle}>Rs. {product.unit_price}</td>
+                      <td style={tdStyle}>{formatINR(product.unit_price)}</td>
                       <td style={tdStyle}>{product.description || "—"}</td>
                       <td style={tdStyle}>
                         <button
@@ -691,6 +709,12 @@ const btnDeleteRow = {
   border: "none", padding: "5px 12px",
   borderRadius: "4px", cursor: "pointer",
   fontSize: "12px",
+};
+const btnExport = {
+  backgroundColor: "#5cb85c", color: "white",
+  padding: "8px 16px", border: "none",
+  borderRadius: "6px", cursor: "pointer",
+  fontSize: "13px", fontWeight: "500",
 };
 
 export default Products;

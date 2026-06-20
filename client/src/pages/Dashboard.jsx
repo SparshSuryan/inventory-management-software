@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import { formatINR } from "../utils/formatCurrency";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ function Dashboard() {
               { label: "Total Products", value: data.products.total, icon: "📦", color: "#004aad" },
               { label: "Low Stock Items", value: data.products.lowStock, icon: "⚠️", color: "#f0ad4e" },
               { label: "Out of Stock", value: data.products.outOfStock, icon: "❌", color: "#d9534f" },
-              { label: "Total Inventory Value", value: `₹${data.products.totalInventoryValue.toLocaleString()}`, icon: "💰", color: "#004aad" },
+              { label: "Total Inventory Value", value: formatINR(data.products.totalInventoryValue), icon: "💰", color: "#004aad" },
             ].map((k) => (
               <div key={k.label} style={{ backgroundColor: "white", border: "1.5px solid #004aad", borderRadius: "10px", padding: "16px", textAlign: "center" }}>
                 <div style={{ fontSize: "13px", fontWeight: "500", color: "#555" }}>{k.label}</div>
@@ -95,7 +96,7 @@ function Dashboard() {
                       </td>
                       <td style={{ padding: "8px", fontSize: "12px", textAlign: "center", fontWeight: "600" }}>{s.productCount}</td>
                       <td style={{ padding: "8px", fontSize: "12px", textAlign: "center" }}>{s.totalQty}</td>
-                      <td style={{ padding: "8px", fontSize: "12px", textAlign: "center" }}>₹{s.totalValue.toLocaleString()}</td>
+                      <td style={{ padding: "8px", fontSize: "12px", textAlign: "center" }}>{formatINR(s.totalValue)}</td>
                     </tr>
                   ))}
                 </tbody>

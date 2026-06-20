@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api/axios";
+import Sidebar from "../components/Sidebar";
+import Navbar from "../components/Navbar";
 
 function StockMovements() {
   const { productId } = useParams();
@@ -32,6 +34,12 @@ function StockMovements() {
   if (error) return <p style={{ padding: "20px", color: "red" }}>{error}</p>;
 
   return (
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#fcf6db" }}>
+  <Sidebar />
+  <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+    <Navbar title="Stock Movement History" />
+    <div style={{ padding: "24px" }}>
+
     <div style={{ padding: "20px" }}>
 
       {/* Header */}
@@ -104,6 +112,10 @@ function StockMovements() {
         </table>
       )}
     </div>
+
+    </div>
+</div>
+</div>
   );
 }
 

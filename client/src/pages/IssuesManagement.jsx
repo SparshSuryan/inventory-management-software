@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import { exportToCSV } from "../utils/exportCSV";
 
 const ISSUE_TYPES = [
   { value: "LOW_STOCK", label: "Low Stock", color: "#f0ad4e", bg: "#fefaf2" },
@@ -92,6 +93,36 @@ function IssuesManagement() {
       .catch(() => setFormError("Failed to update issue"));
   };
 
+  const handleExport = () => {
+    const exportData = filteredIssues.map((i) => ({
+      issue_number: i.issue_number,
+      product_name: i.product?.product_name || "",
+      sku: i.product?.sku || "",
+      stage: i.stage,
+      issue_type: i.issue_type.replace(/_/g, " "),
+      description: i.description || "",
+      status: i.status,
+      raised_on: new Date(i.created_at).toLocaleDateString("en-IN"),
+      resolved_at: i.resolved_at
+        ? new Date(i.resolved_at).toLocaleDateString("en-IN")
+        : "",
+    }));
+  
+    const headers = [
+      { label: "Issue #", key: "issue_number" },
+      { label: "Product Name", key: "product_name" },
+      { label: "SKU", key: "sku" },
+      { label: "Stage", key: "stage" },
+      { label: "Issue Type", key: "issue_type" },
+      { label: "Description", key: "description" },
+      { label: "Status", key: "status" },
+      { label: "Raised On", key: "raised_on" },
+      { label: "Resolved At", key: "resolved_at" },
+    ];
+  
+    exportToCSV("issues", headers, exportData);
+  };
+
   // Apply frontend filters
   const filteredIssues = issues.filter((issue) => {
     const matchesStatus = !statusFilter || issue.status === statusFilter;
@@ -103,6 +134,7 @@ function IssuesManagement() {
   const openCount = issues.filter((i) => i.status === "OPEN").length;
   const inProgressCount = issues.filter((i) => i.status === "IN_PROGRESS").length;
   const resolvedCount = issues.filter((i) => i.status === "RESOLVED").length;
+
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#fcf6db" }}>
@@ -163,10 +195,14 @@ function IssuesManagement() {
                 </button>
               )}
             </div>
-
+            <div style={{display: "flex", gap: "10px"}}>
             <button onClick={() => { setShowForm(true); setFormError(null); setFormSuccess(null); }} style={btnPrimary}>
               + Raise Issue
             </button>
+            <button onClick={handleExport} style={btnExport}>
+                Export CSV ↓
+            </button>
+            </div>
           </div>
 
           {/* Messages */}
@@ -303,6 +339,7 @@ function IssuesManagement() {
   );
 }
 
+// Styles
 const labelStyle = { display: "block", marginBottom: "4px", fontSize: "13px", fontWeight: "500", color: "#333" };
 const inputStyle = { width: "100%", padding: "8px 10px", border: "1px solid #ccc", borderRadius: "6px", fontSize: "14px" };
 const selectStyle = { padding: "8px 12px", border: "1.5px solid #004aad", borderRadius: "6px", fontSize: "13px", backgroundColor: "white", color: "#004aad" };
@@ -312,5 +349,11 @@ const btnResolve = { backgroundColor: "#5cb85c", color: "white", border: "none",
 const btnProgress = { backgroundColor: "#f0ad4e", color: "white", border: "none", padding: "5px 10px", borderRadius: "4px", cursor: "pointer", fontSize: "11px", fontWeight: "600" };
 const thStyle = { padding: "10px", textAlign: "center", fontSize: "13px", fontWeight: "600", color: "#004aad", borderBottom: "2px solid #e8d9b0", borderRight: "1px solid #e8d9b0" };
 const tdStyle = { padding: "10px", textAlign: "center", fontSize: "13px", borderBottom: "1px solid #e8d9b0", borderRight: "1px solid #e8d9b0", color: "#333" };
+const btnExport = {
+    backgroundColor: "#5cb85c", color: "white",
+    padding: "10px 20px", border: "none",
+    borderRadius: "6px", cursor: "pointer",
+    fontSize: "14px", fontWeight: "500",
+};
 
 export default IssuesManagement;

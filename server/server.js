@@ -29,6 +29,8 @@ const dashboardRoutes = require("./src/routes/dashboardRoutes");
 
 const inventoryStatusRoutes = require("./src/routes/inventoryStatusRoutes");
 
+const authRoutes = require("./src/routes/authRoutes");
+
 // Root Route
 app.get("/", (req, res) => {
     res.send("Inventory Management Software Backend Running");
@@ -58,6 +60,9 @@ app.use("/api/dashboard", dashboardRoutes);
 //Inventory Status API
 app.use("/api/inventory-status", inventoryStatusRoutes);
 
+//Authentication
+app.use("/api/auth", authRoutes);
+
 app.get("/api/test-db", async (req, res) => {
     try {
       const categories = await prisma.category.findMany();
@@ -78,4 +83,10 @@ app.get("/api/test-db", async (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ success: false, message: "Internal server error" });
 });

@@ -4,6 +4,8 @@ import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import ReceiptBulkUploadModal from "../components/ReceiptBulkUploadModal";
+import { formatINR } from "../utils/formatCurrency";
+import { exportToCSV } from "../utils/exportCSV";
 
 const emptyForm = {
     sku: "",
@@ -136,6 +138,34 @@ function Receipts() {
       });
   };
 
+  const handleExport = () => {
+    const exportData = receipts.map((r) => ({
+      receipt_number: r.receipt_number,
+      product_name: r.product?.product_name || "",
+      sku: r.product?.sku || "",
+      supplier: r.supplier,
+      quantity: r.quantity,
+      unit_cost: r.unit_cost || "",
+      total_cost: r.total_cost || "",
+      received_date: new Date(r.received_date).toLocaleDateString("en-IN"),
+      remarks: r.remarks || "",
+    }));
+  
+    const headers = [
+      { label: "Receipt #", key: "receipt_number" },
+      { label: "Product Name", key: "product_name" },
+      { label: "SKU", key: "sku" },
+      { label: "Supplier", key: "supplier" },
+      { label: "Quantity", key: "quantity" },
+      { label: "Unit Cost", key: "unit_cost" },
+      { label: "Total Cost", key: "total_cost" },
+      { label: "Received Date", key: "received_date" },
+      { label: "Remarks", key: "remarks" },
+    ];
+  
+    exportToCSV("receipts", headers, exportData);
+  };
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#fcf6db" }}>
       <Sidebar />
@@ -160,6 +190,9 @@ function Receipts() {
     <button onClick={handleAddClick} style={btnAdd}>
       + Add Receipt
     </button>
+    <button onClick={handleExport} style={btnExport}>
+  Export CSV ↓
+</button>
   </div>
 </div>
 
@@ -256,7 +289,7 @@ function Receipts() {
     min="0"
     step="0.01"
     style={inputStyle}
-    placeholder={foundProduct ? `Default: ₹${foundProduct.unit_price}` : "e.g. 450"}
+    placeholder={foundProduct ? `Default: ${formatINR(foundProduct.unit_price)}` : "e.g. 450"}
   />
 </div>
 
@@ -369,8 +402,8 @@ function Receipts() {
                       <td style={tdStyle}>{r.product?.sku}</td>
                       <td style={tdStyle}>{r.supplier}</td>
                       <td style={tdStyle}>+{r.quantity}</td>
-                      <td style={tdStyle}>₹{r.unit_cost?.toFixed(2) || "—"}</td>
-                      <td style={tdStyle}>₹{r.total_cost?.toFixed(2) || "—"}</td>
+                      <td style={tdStyle}>{r.unit_cost ? formatINR(r.unit_cost) : "—"}</td>
+                      <td style={tdStyle}>{r.total_cost ? formatINR(r.total_cost) : "—"}</td>
                       <td style={tdStyle}>{new Date(r.received_date).toLocaleDateString()}</td>
                       <td style={tdStyle}>{r.remarks || "—"}</td>
                     </tr>
@@ -397,6 +430,7 @@ function Receipts() {
   );
 }
 
+//Styles
 const labelStyle = {
   display: "block", marginBottom: "4px",
   fontSize: "13px", fontWeight: "500", color: "#333",
@@ -430,6 +464,12 @@ const btnUpload = {
     backgroundColor: "#5bc0de", color: "white",
     padding: "10px 20px", border: "none",
     borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "500",
-  };
+};
+const btnExport = {
+    backgroundColor: "#5cb85c", color: "white",
+    padding: "10px 20px", border: "none",
+    borderRadius: "6px", cursor: "pointer",
+    fontSize: "14px", fontWeight: "500",
+};
 
 export default Receipts;

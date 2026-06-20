@@ -6,19 +6,14 @@ const getAllProducts = async (req, res) => {
     const products = await prisma.product.findMany({
       include: {
         category: true,
+        stock: true,
       },
+      orderBy: { product_id: "asc" },
     });
-
-    res.status(200).json({
-      success: true,
-      data: products,
-    });
+    res.status(200).json({ success: true, data: products });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch products",
-    });
+    res.status(500).json({ success: false, message: "Failed to fetch products" });
   }
 };
 
@@ -181,6 +176,8 @@ const deleteProduct = async (req, res) => {
         message: "Product not found",
       });
     }
+
+    await prisma.issue.deleteMany({ where: { product_id: parseInt(id) } });
 
     // Delete in correct order — children first, then parent
     await prisma.stockMovement.deleteMany({

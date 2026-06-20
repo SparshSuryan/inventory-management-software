@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import { formatINR } from "../utils/formatCurrency";
+import { exportToCSV } from "../utils/exportCSV";
 
 const getStockStatus = (quantity, reorderLevel) => {
   if (quantity === 0)
@@ -139,6 +141,36 @@ function StockManagement() {
   if (loading) return <p style={{ padding: "20px" }}>Loading stock data...</p>;
   if (error) return <p style={{ padding: "20px", color: "red" }}>{error}</p>;
 
+  const handleExport = () => {
+    const exportData = filteredProducts.map((p) => {
+      const stock = stockMap[p.product_id];
+      const status = stock ? getStockStatus(stock.quantity, stock.reorder_level) : null;
+      return {
+        product_id: p.product_id,
+        product_name: p.product_name,
+        sku: p.sku,
+        category: p.category?.category_name || "N/A",
+        quantity: stock?.quantity ?? "No Record",
+        reorder_level: stock?.reorder_level ?? "N/A",
+        stock_status: status?.label || "No Record",
+        unit_price: p.unit_price,
+      };
+    });
+  
+    const headers = [
+      { label: "Product ID", key: "product_id" },
+      { label: "Product Name", key: "product_name" },
+      { label: "SKU", key: "sku" },
+      { label: "Category", key: "category" },
+      { label: "Current Quantity", key: "quantity" },
+      { label: "Reorder Level", key: "reorder_level" },
+      { label: "Stock Status", key: "stock_status" },
+      { label: "Unit Price", key: "unit_price" },
+    ];
+  
+    exportToCSV("stock_management", headers, exportData);
+  };
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#fcf6db" }}>
       <Sidebar />
@@ -175,7 +207,7 @@ function StockManagement() {
               borderRadius: "10px", padding: "10px 20px",
               fontSize: "16px", fontWeight: "700", color: "#004aad",
             }}>
-              Total Inventory Value: ₹{stats.totalValue.toLocaleString()}
+              Total Inventory Value: {formatINR(stats.totalValue)}
             </div>
 
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
@@ -213,6 +245,9 @@ function StockManagement() {
                   Clear ✕
                 </button>
               )}
+              <button onClick={handleExport} style={btnExport}>
+                Export CSV ↓
+              </button>
             </div>
           </div>
 
@@ -359,6 +394,12 @@ const btnHistory = {
   backgroundColor: "#5bc0de", color: "white",
   border: "none", padding: "6px 12px",
   borderRadius: "4px", cursor: "pointer", fontSize: "12px",
+};
+const btnExport = {
+  backgroundColor: "#5cb85c", color: "white",
+  padding: "8px 12px", border: "none",
+  borderRadius: "6px", cursor: "pointer",
+  fontSize: "13px", fontWeight: "500",
 };
 
 export default StockManagement;

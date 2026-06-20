@@ -1,11 +1,20 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getUser, logout } from "../utils/auth";
 
 function Navbar({ title, onSearch }) {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const user = getUser();
 
   const handleSearch = (e) => {
     setSearch(e.target.value);
     if (onSearch) onSearch(e.target.value);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
   };
 
   return (
@@ -31,6 +40,7 @@ function Navbar({ title, onSearch }) {
       </h2>
 
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        {/* Search */}
         <div style={{
           display: "flex", alignItems: "center",
           border: "1px solid #ccc", borderRadius: "20px",
@@ -50,21 +60,38 @@ function Navbar({ title, onSearch }) {
           />
         </div>
 
-        <div style={{
-          display: "flex", alignItems: "center", gap: "8px",
-          backgroundColor: "#004aad", color: "white",
-          padding: "6px 14px", borderRadius: "20px",
-          fontSize: "13px", cursor: "pointer",
-        }}>
-          <span>▼</span>
-          <span>USER123</span>
+        {/* User info + Logout */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div style={{
-            width: "28px", height: "28px",
-            backgroundColor: "white", borderRadius: "50%",
-            display: "flex", alignItems: "center", justifyContent: "center",
+            display: "flex", alignItems: "center", gap: "8px",
+            backgroundColor: "#004aad", color: "white",
+            padding: "6px 14px", borderRadius: "20px",
+            fontSize: "13px",
           }}>
-            <span style={{ fontSize: "16px" }}>👤</span>
+            <div style={{
+              width: "28px", height: "28px",
+              backgroundColor: "white", borderRadius: "50%",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <span style={{ fontSize: "14px" }}>👤</span>
+            </div>
+            <span>{user?.name || "USER"}</span>
+            <span style={{ fontSize: "11px", backgroundColor: "rgba(255,255,255,0.2)", padding: "2px 6px", borderRadius: "10px" }}>
+              {user?.role?.toUpperCase() || "USER"}
+            </span>
           </div>
+
+          <button
+            onClick={handleLogout}
+            style={{
+              backgroundColor: "#d9534f", color: "white",
+              border: "none", padding: "8px 14px",
+              borderRadius: "20px", cursor: "pointer",
+              fontSize: "12px", fontWeight: "600",
+            }}
+          >
+            Logout
+          </button>
         </div>
       </div>
     </div>

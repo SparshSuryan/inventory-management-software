@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import { exportToCSV } from "../utils/exportCSV";
 
 function InventoryTransfers() {
   const [transfers, setTransfers] = useState([]);
@@ -73,6 +74,32 @@ function InventoryTransfers() {
       });
   };
 
+  const handleExport = () => {
+    const exportData = transfers.map((t) => ({
+      transfer_number: t.transfer_number,
+      product_name: t.product?.product_name || "",
+      sku: t.product?.sku || "",
+      from_category: t.fromCategory?.category_name || "",
+      to_category: t.toCategory?.category_name || "",
+      quantity: t.quantity,
+      remarks: t.remarks || "",
+      date: new Date(t.created_at).toLocaleDateString("en-IN"),
+    }));
+  
+    const headers = [
+      { label: "Transfer #", key: "transfer_number" },
+      { label: "Product Name", key: "product_name" },
+      { label: "SKU", key: "sku" },
+      { label: "From Stage", key: "from_category" },
+      { label: "To Stage", key: "to_category" },
+      { label: "Quantity", key: "quantity" },
+      { label: "Remarks", key: "remarks" },
+      { label: "Date", key: "date" },
+    ];
+  
+    exportToCSV("inventory_transfers", headers, exportData);
+  };
+
   // Valid destination categories based on source
   const getValidDestinations = () => {
     if (!formData.from_category) return categories;
@@ -101,9 +128,14 @@ function InventoryTransfers() {
                 Move inventory between stages — Raw Material → WIP → Finished Product
               </p>
             </div>
+            <div  style={{ display: "flex", gap: "10px" }}>
+            <button onClick={handleExport} style={btnExport}>
+                Export CSV ↓
+            </button>
             <button onClick={() => { setShowForm(true); setFormError(null); setFormSuccess(null); }} style={btnPrimary}>
               + New Transfer
             </button>
+            </div>
           </div>
 
           {/* Messages */}
@@ -265,5 +297,11 @@ const btnPrimary = { backgroundColor: "#004aad", color: "white", padding: "10px 
 const btnCancel = { backgroundColor: "#ccc", color: "#333", padding: "10px 24px", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "14px" };
 const thStyle = { padding: "10px", textAlign: "center", fontSize: "13px", fontWeight: "600", color: "#004aad", borderBottom: "2px solid #e8d9b0", borderRight: "1px solid #e8d9b0" };
 const tdStyle = { padding: "10px", textAlign: "center", fontSize: "13px", borderBottom: "1px solid #e8d9b0", borderRight: "1px solid #e8d9b0", color: "#333" };
+const btnExport = {
+    backgroundColor: "#5cb85c", color: "white",
+    padding: "10px 20px", border: "none",
+    borderRadius: "6px", cursor: "pointer",
+    fontSize: "14px", fontWeight: "500",
+};
 
 export default InventoryTransfers;

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import { formatINR } from "../utils/formatCurrency";
 
 const STOCK_STATUS_STYLES = {
   "Surplus": { color: "#5cb85c", bg: "#f2faf2" },
@@ -82,7 +83,7 @@ function InventoryStatus() {
             {[
               { label: "Total Products", value: totalProducts, icon: "📦", color: "#004aad" },
               { label: "Total Quantity", value: totalQty, icon: "🔢", color: "#5bc0de" },
-              { label: "Total Inventory Value", value: `₹${totalValue.toLocaleString()}`, icon: "💰", color: "#004aad" },
+              { label: "Total Inventory Value", value: formatINR(totalValue), icon: "💰", color: "#004aad" },
               { label: "Products with Open Issues", value: totalIssues, icon: "⚠️", color: "#d9534f" },
             ].map((k) => (
               <div key={k.label} style={{ backgroundColor: "white", border: "1.5px solid #004aad", borderRadius: "10px", padding: "16px", textAlign: "center" }}>
@@ -152,7 +153,7 @@ function InventoryStatus() {
                       Total Qty: {cat.summary.total_quantity}
                     </div>
                     <div style={{ backgroundColor: "#e6f0ff", color: "#004aad", padding: "4px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: "500" }}>
-                      Value: ₹{cat.summary.total_value.toLocaleString()}
+                      Value: {formatINR(cat.summary.total_value)}
                     </div>
                     {cat.summary.products_with_issues > 0 && (
                       <div style={{ backgroundColor: "#fdf2f2", color: "#d9534f", padding: "4px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: "600" }}>
@@ -192,7 +193,7 @@ function InventoryStatus() {
                             <td style={tdStyle}>{i + 1}</td>
                             <td style={{ ...tdStyle, fontWeight: "500", textAlign: "left" }}>{p.product_name}</td>
                             <td style={tdStyle}>{p.sku}</td>
-                            <td style={tdStyle}>₹{p.unit_price.toLocaleString()}</td>
+                            <td style={tdStyle}>{formatINR(p.unit_price)}</td>
                             <td style={{ ...tdStyle, fontWeight: "700" }}>{p.quantity}</td>
                             <td style={tdStyle}>{p.reorder_level}</td>
 
