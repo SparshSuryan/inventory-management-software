@@ -9,6 +9,8 @@ import IssuesManagement from "./pages/IssuesManagement";
 import InventoryStatus from "./pages/InventoryStatus";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SalesHistory from "./pages/SalesHistory";
+import AuditLog from "./pages/AuditLog";
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
       <Route path="/receipt/transfers" element={<ProtectedRoute><InventoryTransfers /></ProtectedRoute>} />
       <Route path="/inventory/issues" element={<ProtectedRoute><IssuesManagement /></ProtectedRoute>} />
       <Route path="/inventory" element={<ProtectedRoute><InventoryStatus /></ProtectedRoute>} />
+      <Route path="/sales" element={<ProtectedRoute><SalesHistory /></ProtectedRoute>} />
+      <Route path="/audit" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
     </Routes>
   );
 }

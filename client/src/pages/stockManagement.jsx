@@ -237,6 +237,7 @@ function StockManagement() {
               </select>
 
               {/* Clear filters */}
+              <div style={{display: "flex", gap: "10px"}}>
               {(filterCategory || filterStatus) && (
                 <button
                   onClick={() => { setFilterCategory(""); setFilterStatus(""); }}
@@ -248,6 +249,7 @@ function StockManagement() {
               <button onClick={handleExport} style={btnExport}>
                 Export CSV ↓
               </button>
+              </div>
             </div>
           </div>
 

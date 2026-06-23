@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const { createAuditLog } = require("./auditControllers");
 
 // Helper — generate next receipt number (RCP-0001, RCP-0002...)
 const generateReceiptNumber = async () => {
@@ -74,6 +75,13 @@ const checkSku = async (req, res) => {
       message: "Failed to check SKU",
     });
   }
+
+  await createAuditLog({
+    action: "CREATE",
+    entityType: "Receipt",
+    entityId: result.receipt.receipt_id,
+    newValues: { receipt_number: result.receipt.receipt_number, product_id, quantity },
+  });
 };
 
 // POST /api/receipts

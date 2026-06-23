@@ -230,7 +230,7 @@ function InventoryStatus() {
                                 </button>
                                 {p.issue_status !== "Issue Raised" && (
                                   <button
-                                    onClick={() => navigate("/issues")}
+                                    onClick={() => navigate("/inventory/issues")}
                                     style={{ backgroundColor: "#f0ad4e", color: "white", border: "none", padding: "4px 8px", borderRadius: "4px", cursor: "pointer", fontSize: "11px" }}
                                   >
                                     Raise Issue
@@ -238,7 +238,7 @@ function InventoryStatus() {
                                 )}
                                 {p.issue_status === "Issue Raised" && (
                                   <button
-                                    onClick={() => navigate("/issues")}
+                                    onClick={() => navigate("/inventory/issues")}
                                     style={{ backgroundColor: "#d9534f", color: "white", border: "none", padding: "4px 8px", borderRadius: "4px", cursor: "pointer", fontSize: "11px" }}
                                   >
                                     View Issue

@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const { createAuditLog } = require("./auditControllers");
 
 const generateIssueNumber = async () => {
   const last = await prisma.issue.findFirst({ orderBy: { issue_id: "desc" } });
@@ -76,6 +77,13 @@ const createIssue = async (req, res) => {
     console.error(error);
     res.status(500).json({ success: false, message: "Failed to create issue" });
   }
+
+  await createAuditLog({
+    action: "RAISE_ISSUE",
+    entityType: "Issue",
+    entityId: issue.issue_id,
+    newValues: { issue_number: issue.issue_number, issue_type, stage },
+  });
 };
 
 // PUT /api/issues/:id/resolve
@@ -113,6 +121,13 @@ const resolveIssue = async (req, res) => {
     console.error(error);
     res.status(500).json({ success: false, message: "Failed to resolve issue" });
   }
+
+  await createAuditLog({
+    action: "RESOLVE_ISSUE",
+    entityType: "Issue",
+    entityId: parseInt(id),
+    newValues: { status: "RESOLVED" },
+  });
 };
 
 // PUT /api/issues/:id/progress

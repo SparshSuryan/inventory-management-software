@@ -105,6 +105,9 @@ function Sidebar() {
               <div style={dropdownItemStyle("/stock")} onClick={() => navigate("/stock")}>
                 Stock Management
               </div>
+              <div style={dropdownItemStyle("/sales")} onClick={() => navigate("/sales")}>
+                Sales History
+              </div>
             </div>
           )}
         </div>
@@ -114,14 +117,15 @@ function Sidebar() {
         Issues Management 
         </div>
 
+        {/* Audit Log */}
+        <div style={navItemStyle("/audit")} onClick={() => navigate("/audit")}>
+          Audit Log
+        </div>
+
         {/* Inventory Status dropdown */}
-        {/* Inventory Status — direct link */}
-<div
-  style={navItemStyle("/inventory")}
-  onClick={() => navigate("/inventory")}
->
-  Inventory Status
-</div>
+        <div style={navItemStyle("/inventory")} onClick={() => navigate("/inventory")}>
+          Inventory Status
+        </div>
 
       </nav>
     </div>

@@ -31,6 +31,10 @@ const inventoryStatusRoutes = require("./src/routes/inventoryStatusRoutes");
 
 const authRoutes = require("./src/routes/authRoutes");
 
+const salesRoutes = require("./src/routes/salesRoutes");
+
+const auditRoutes = require("./src/routes/auditRoutes");
+
 // Root Route
 app.get("/", (req, res) => {
     res.send("Inventory Management Software Backend Running");
@@ -62,6 +66,12 @@ app.use("/api/inventory-status", inventoryStatusRoutes);
 
 //Authentication
 app.use("/api/auth", authRoutes);
+
+//Sales History API
+app.use("/api/sales", salesRoutes);
+
+//Audit Log API
+app.use("/api/audit", auditRoutes);
 
 app.get("/api/test-db", async (req, res) => {
     try {

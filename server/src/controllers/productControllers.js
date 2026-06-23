@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const { createAuditLog } = require("./auditControllers");
 
 // GET /api/products
 const getAllProducts = async (req, res) => {
@@ -100,6 +101,13 @@ const createProduct = async (req, res) => {
       message: "Failed to create product",
     });
   }
+
+  await createAuditLog({
+    action: "CREATE",
+    entityType: "Product",
+    entityId: product.product_id,
+    newValues: { product_name: product.product_name, sku: product.sku },
+  });
 };
 
 // PUT /api/products/:id
@@ -159,10 +167,24 @@ const updateProduct = async (req, res) => {
       message: "Failed to update product",
     });
   }
+
+  await createAuditLog({
+    action: "UPDATE",
+    entityType: "Product",
+    entityId: parseInt(id),
+    newValues: req.body,
+  });
 };
 
 // DELETE /api/products/:id
 const deleteProduct = async (req, res) => {
+  await createAuditLog({
+    action: "DELETE",
+    entityType: "Product",
+    entityId: parseInt(id),
+    oldValues: { product_name: existing.product_name, sku: existing.sku },
+  });
+
   try {
     const { id } = req.params;
 
