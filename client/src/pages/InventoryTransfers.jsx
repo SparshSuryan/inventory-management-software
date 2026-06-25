@@ -12,6 +12,7 @@ function InventoryTransfers() {
   const [showForm, setShowForm] = useState(false);
   const [formError, setFormError] = useState(null);
   const [formSuccess, setFormSuccess] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [formData, setFormData] = useState({
     product_id: "",
@@ -33,7 +34,7 @@ function InventoryTransfers() {
       setTransfers(tRes.data.data);
       setProducts(pRes.data.data);
       // Only show Raw Material, WIP, Finished Product (not Sold) as transfer sources
-      setCategories(cRes.data.data.filter((c) => c.category_name !== "Sold"));
+      setCategories(cRes.data.data);
       setLoading(false);
     }).catch(() => setLoading(false));
   };
@@ -100,10 +101,32 @@ function InventoryTransfers() {
     exportToCSV("inventory_transfers", headers, exportData);
   };
 
-  // Valid destination categories based on source
   const getValidDestinations = () => {
-    if (!formData.from_category) return categories;
-    return categories.filter((c) => String(c.category_id) !== formData.from_category);
+    if (!formData.from_category) return [];
+  
+    const fromId = parseInt(formData.from_category);
+  
+    const validPaths = {
+      3: [4, 5],    // Raw Material → WIP, Finished Product
+      4: [5],       // WIP → Finished Product only
+      5: [6],       // Finished Product → Sold only
+      6: [],        // Sold → nowhere (final stage)
+    };
+  
+    const allowedIds = validPaths[fromId] || [];
+    console.log("fromId:", fromId);
+console.log("allowedIds:", allowedIds);
+console.log("categories:", categories);
+console.log(
+  "category IDs:",
+  categories.map((c) => ({
+    id: c.category_id,
+    name: c.category_name,
+  }))
+);
+    return categories.filter((c) =>
+      allowedIds.includes(parseInt(c.category_id))
+    );
   };
 
   const getCategoryName = (id) => {
@@ -111,13 +134,20 @@ function InventoryTransfers() {
     return cat?.category_name || "—";
   };
 
+  const filteredTransfers = transfers.filter((t) =>
+    !searchTerm ||
+    t.transfer_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.product?.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.product?.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (loading) return <p style={{ padding: "20px" }}>Loading...</p>;
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#fcf6db" }}>
       <Sidebar />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <Navbar title="Receipt Management" />
+      <Navbar title="Receipt Management" onSearch={(val) => setSearchTerm(val)} />
         <div style={{ padding: "24px", flex: 1 }}>
 
           {/* Header */}
@@ -186,22 +216,34 @@ function InventoryTransfers() {
 
                   {/* To category */}
                   <div>
-                    <label style={labelStyle}>To (Destination Stage) *</label>
-                    <select
-                      name="to_category"
-                      value={formData.to_category}
-                      onChange={handleChange}
-                      required
-                      style={inputStyle}
-                    >
-                      <option value="">-- Select destination --</option>
-                      {getValidDestinations().map((c) => (
-                        <option key={c.category_id} value={c.category_id}>
-                          {c.category_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+  <label style={labelStyle}>To (Destination Stage) *</label>
+  <select
+    name="to_category"
+    value={formData.to_category}
+    onChange={handleChange}
+    required
+    style={inputStyle}
+    disabled={getValidDestinations().length === 0}
+  >
+    <option value="">
+      {!formData.from_category
+        ? "-- Select product first --"
+        : getValidDestinations().length === 0
+        ? "-- No valid destination (already Sold) --"
+        : "-- Select destination --"}
+    </option>
+    {getValidDestinations().map((c) => (
+      <option key={c.category_id} value={c.category_id}>
+        {c.category_name}
+      </option>
+    ))}
+  </select>
+  {formData.from_category && getValidDestinations().length > 0 && (
+    <p style={{ fontSize: "11px", color: "#888", marginTop: "4px" }}>
+      Valid paths: {getValidDestinations().map((c) => c.category_name).join(", ")}
+    </p>
+  )}
+</div>
 
                   {/* Quantity */}
                   <div>

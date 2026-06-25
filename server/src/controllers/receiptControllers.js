@@ -75,13 +75,6 @@ const checkSku = async (req, res) => {
       message: "Failed to check SKU",
     });
   }
-
-  await createAuditLog({
-    action: "CREATE",
-    entityType: "Receipt",
-    entityId: result.receipt.receipt_id,
-    newValues: { receipt_number: result.receipt.receipt_number, product_id, quantity },
-  });
 };
 
 // POST /api/receipts
@@ -176,6 +169,21 @@ const receipt = await tx.receipt.create({
       return { receipt, updatedStock };
     });
 
+    await createAuditLog({
+      userId: req.user?.user_id || null,
+      action: "CREATE",
+      entityType: "Receipt",
+      entityId: result.receipt.receipt_id,
+      newValues: {
+        receipt_number: result.receipt.receipt_number,
+        sku,
+        supplier,
+        quantity: qty,
+        unit_cost: result.receipt.unit_cost,
+        total_cost: result.receipt.total_cost,
+      },
+    });
+
     res.status(201).json({
       success: true,
       message: `Receipt ${receiptNumber} created — stock updated for ${product.product_name}`,
@@ -188,6 +196,7 @@ const receipt = await tx.receipt.create({
       message: "Failed to create receipt",
     });
   }
+
 };
 
 // POST /api/receipts/bulk

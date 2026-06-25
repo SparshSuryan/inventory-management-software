@@ -53,138 +53,89 @@ const getProductById = async (req, res) => {
 // POST /api/products
 const createProduct = async (req, res) => {
   try {
-    const {
-      product_name,
-      sku,
-      description,
-      unit_price,
-      supplier,
-      category_id,
-    } = req.body;
-
-    // Basic validation
-    if (!product_name || !sku || !unit_price || !category_id) {
-      return res.status(400).json({
-        success: false,
-        message: "product_name, sku, unit_price and category_id are required",
-      });
-    }
+    const { product_name, sku, description, unit_price, category_id, supplier } = req.body;
 
     const product = await prisma.product.create({
       data: {
         product_name,
         sku,
-        description,
-        unit_price,
-        supplier,
-        category_id,
+        description: description || null,
+        unit_price: parseFloat(unit_price),
+        category_id: parseInt(category_id),
+        supplier: supplier || null,
+      },
+      include: { category: true },
+    });
+
+    // Auto-create stock record
+    await prisma.stock.create({
+      data: {
+        product_id: product.product_id,
+        quantity: 0,
+        reorder_level: 5,
       },
     });
 
-    res.status(201).json({
-      success: true,
-      data: product,
+    await createAuditLog({
+      action: "CREATE",
+      entityType: "Product",
+      entityId: product.product_id,
+      newValues: { product_name, sku, unit_price, category_id },
     });
+
+    res.status(201).json({ success: true, message: "Product created successfully", data: product });
   } catch (error) {
     console.error(error);
-
-    // Handle duplicate SKU error from Prisma
     if (error.code === "P2002") {
-      return res.status(400).json({
-        success: false,
-        message: "A product with this SKU already exists",
-      });
+      return res.status(400).json({ success: false, message: "SKU already exists" });
     }
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to create product",
-    });
+    res.status(500).json({ success: false, message: "Failed to create product" });
   }
-
-  await createAuditLog({
-    action: "CREATE",
-    entityType: "Product",
-    entityId: product.product_id,
-    newValues: { product_name: product.product_name, sku: product.sku },
-  });
 };
 
 // PUT /api/products/:id
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      product_name,
-      sku,
-      description,
-      unit_price,
-      supplier,
-      category_id,
-    } = req.body;
 
-    // Check if product exists first
     const existing = await prisma.product.findUnique({
       where: { product_id: parseInt(id) },
     });
 
     if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
+      return res.status(404).json({ success: false, message: "Product not found" });
     }
 
     const product = await prisma.product.update({
       where: { product_id: parseInt(id) },
       data: {
-        product_name,
-        sku,
-        description,
-        unit_price,
-        supplier,
-        category_id,
+        product_name: req.body.product_name,
+        sku: req.body.sku,
+        description: req.body.description || null,
+        unit_price: parseFloat(req.body.unit_price),
+        category_id: parseInt(req.body.category_id),
+        supplier: req.body.supplier || null,
       },
+      include: { category: true },
     });
 
-    res.status(200).json({
-      success: true,
-      data: product,
+    await createAuditLog({
+      action: "UPDATE",
+      entityType: "Product",
+      entityId: parseInt(id),
+      oldValues: { product_name: existing.product_name, sku: existing.sku, unit_price: existing.unit_price },
+      newValues: req.body,
     });
+
+    res.status(200).json({ success: true, message: "Product updated successfully", data: product });
   } catch (error) {
     console.error(error);
-
-    // Handle duplicate SKU error from Prisma
-    if (error.code === "P2002") {
-      return res.status(400).json({
-        success: false,
-        message: "A product with this SKU already exists",
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to update product",
-    });
+    res.status(500).json({ success: false, message: "Failed to update product" });
   }
-
-  await createAuditLog({
-    action: "UPDATE",
-    entityType: "Product",
-    entityId: parseInt(id),
-    newValues: req.body,
-  });
 };
 
 // DELETE /api/products/:id
 const deleteProduct = async (req, res) => {
-  await createAuditLog({
-    action: "DELETE",
-    entityType: "Product",
-    entityId: parseInt(id),
-    oldValues: { product_name: existing.product_name, sku: existing.sku },
-  });
-
   try {
     const { id } = req.params;
 
@@ -193,41 +144,26 @@ const deleteProduct = async (req, res) => {
     });
 
     if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
+      return res.status(404).json({ success: false, message: "Product not found" });
     }
 
+    await createAuditLog({
+      action: "DELETE",
+      entityType: "Product",
+      entityId: parseInt(id),
+      oldValues: { product_name: existing.product_name, sku: existing.sku },
+    });
+
+    await prisma.stockMovement.deleteMany({ where: { product_id: parseInt(id) } });
+    await prisma.stockAlert.deleteMany({ where: { product_id: parseInt(id) } });
     await prisma.issue.deleteMany({ where: { product_id: parseInt(id) } });
+    await prisma.stock.deleteMany({ where: { product_id: parseInt(id) } });
+    await prisma.product.delete({ where: { product_id: parseInt(id) } });
 
-    // Delete in correct order — children first, then parent
-    await prisma.stockMovement.deleteMany({
-      where: { product_id: parseInt(id) },
-    });
-
-    await prisma.stockAlert.deleteMany({
-      where: { product_id: parseInt(id) },
-    });
-
-    await prisma.stock.deleteMany({
-      where: { product_id: parseInt(id) },
-    });
-
-    await prisma.product.delete({
-      where: { product_id: parseInt(id) },
-    });
-
-    res.status(200).json({
-      success: true,
-      message: "Product deleted successfully",
-    });
+    res.status(200).json({ success: true, message: "Product deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to delete product",
-    });
+    res.status(500).json({ success: false, message: "Failed to delete product" });
   }
 };
 

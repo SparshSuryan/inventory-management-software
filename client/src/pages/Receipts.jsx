@@ -17,7 +17,7 @@ const emptyForm = {
   };
 
 function Receipts() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   const [receipts, setReceipts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,6 +37,7 @@ function Receipts() {
   const [showCreatePrompt, setShowCreatePrompt] = useState(false);
 
   const [showBulkModal, setShowBulkModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchReceipts = () => {
     API.get("/receipts")
@@ -139,7 +140,7 @@ function Receipts() {
   };
 
   const handleExport = () => {
-    const exportData = receipts.map((r) => ({
+    const exportData = filteredReceipts.map((r) => ({
       receipt_number: r.receipt_number,
       product_name: r.product?.product_name || "",
       sku: r.product?.sku || "",
@@ -166,12 +167,20 @@ function Receipts() {
     exportToCSV("receipts", headers, exportData);
   };
 
+  const filteredReceipts = receipts.filter((r) =>
+    !searchTerm ||
+    r.receipt_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.product?.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.product?.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.supplier?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#fcf6db" }}>
       <Sidebar />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <Navbar title="Receipt Management" />
+        <Navbar title="Receipt Management" onSearch={(val) => setSearchTerm(val)} />
 
         <div style={{ padding: "24px", flex: 1 }}>
 
@@ -383,8 +392,12 @@ function Receipts() {
               <p style={{ padding: "20px" }}>Loading receipts...</p>
             ) : error ? (
               <p style={{ padding: "20px", color: "red" }}>{error}</p>
-            ) : receipts.length === 0 ? (
-              <p style={{ padding: "20px" }}>No receipts found. Add your first receipt!</p>
+            ) : filteredReceipts.length === 0 ? (
+              <p style={{ padding: "20px" }}>
+                {receipts.length === 0
+                  ? "No receipts found. Add your first receipt!"
+                  : "No receipts match your search."}
+              </p>
             ) : (
               <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #e8d9b0" }}>
                 <thead>
@@ -395,7 +408,7 @@ function Receipts() {
                   </tr>
                 </thead>
                 <tbody>
-                  {receipts.map((r, index) => (
+                {filteredReceipts.map((r, index) => (
                     <tr key={r.receipt_id} style={{ backgroundColor: index % 2 === 0 ? "#fffdf5" : "#fdf6e3" }}>
                       <td style={tdStyle}><strong>{r.receipt_number}</strong></td>
                       <td style={tdStyle}>{r.product?.product_name}</td>

@@ -111,24 +111,35 @@ function Dashboard() {
                   View All
                 </button>
               </div>
-              {data.issues.unresolved.length === 0 ? (
-                <p style={{ color: "#5cb85c", fontSize: "13px", textAlign: "center", padding: "20px" }}>✅ No unresolved issues!</p>
-              ) : (
-                data.issues.unresolved.map((issue) => (
-                  <div key={issue.issue_id} style={{ padding: "10px 12px", borderRadius: "8px", backgroundColor: issue.status === "OPEN" ? "#fdf2f2" : "#fefaf2", border: `1px solid ${issue.status === "OPEN" ? "#f5c2c2" : "#ffe082"}`, marginBottom: "8px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontWeight: "600", fontSize: "13px", color: "#333" }}>{issue.issue_number}</span>
-                      <span style={{ fontSize: "11px", fontWeight: "600", color: issue.status === "OPEN" ? "#d9534f" : "#f0ad4e" }}>{issue.status}</span>
-                    </div>
-                    <div style={{ fontSize: "12px", color: "#555", marginTop: "4px" }}>
-                      {issue.product?.product_name} — {issue.issue_type.replace(/_/g, " ")}
-                    </div>
-                    <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>
-                      {new Date(issue.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                ))
-              )}
+
+{data.issues.unresolved.map((issue) => (
+  <div
+    key={issue.issue_id}
+    onClick={() => navigate("/inventory/issues")}
+    style={{
+      padding: "10px 12px", borderRadius: "8px",
+      backgroundColor: issue.status === "OPEN" ? "#fdf2f2" : "#fefaf2",
+      border: `1px solid ${issue.status === "OPEN" ? "#f5c2c2" : "#ffe082"}`,
+      marginBottom: "8px", cursor: "pointer",
+      transition: "opacity 0.2s",
+    }}
+    onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
+    onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+  >
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <span style={{ fontWeight: "600", fontSize: "13px", color: "#333" }}>{issue.issue_number}</span>
+      <span style={{ fontSize: "11px", fontWeight: "600", color: issue.status === "OPEN" ? "#d9534f" : "#f0ad4e" }}>
+        {issue.status}
+      </span>
+    </div>
+    <div style={{ fontSize: "12px", color: "#555", marginTop: "4px" }}>
+      {issue.product?.product_name} — {issue.issue_type.replace(/_/g, " ")}
+    </div>
+    <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>
+      {new Date(issue.created_at).toLocaleDateString("en-IN")} — Click to view →
+    </div>
+  </div>
+))}
             </div>
           </div>
 

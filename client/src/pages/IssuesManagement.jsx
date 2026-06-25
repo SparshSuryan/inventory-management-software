@@ -29,6 +29,7 @@ function IssuesManagement() {
   const [timeFilter, setTimeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [formData, setFormData] = useState({
     product_id: "",
@@ -64,7 +65,7 @@ function IssuesManagement() {
     e.preventDefault();
     setFormError(null);
 
-    API.post("/issues", formData)
+    API.post("/inventory/issues", formData)
       .then((res) => {
         setFormSuccess(res.data.message);
         setShowForm(false);
@@ -76,7 +77,7 @@ function IssuesManagement() {
 
   const handleResolve = (id) => {
     if (!window.confirm("Mark this issue as Resolved?")) return;
-    API.put(`/issues/${id}/resolve`)
+    API.put(`/inventory/issues/${id}/resolve`)
       .then((res) => {
         setFormSuccess(res.data.message);
         fetchIssues();
@@ -85,7 +86,7 @@ function IssuesManagement() {
   };
 
   const handleProgress = (id) => {
-    API.put(`/issues/${id}/progress`)
+    API.put(`/inventory/issues/${id}/progress`)
       .then(() => {
         setFormSuccess("Issue marked as In Progress");
         fetchIssues();
@@ -127,7 +128,15 @@ function IssuesManagement() {
   const filteredIssues = issues.filter((issue) => {
     const matchesStatus = !statusFilter || issue.status === statusFilter;
     const matchesType = !typeFilter || issue.issue_type === typeFilter;
-    return matchesStatus && matchesType;
+  
+    const matchesSearch =
+      !searchTerm ||
+      issue.issue_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      issue.product?.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      issue.product?.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      issue.stage?.toLowerCase().includes(searchTerm.toLowerCase());
+  
+    return matchesStatus && matchesType && matchesSearch;
   });
 
   // Stats
@@ -140,7 +149,7 @@ function IssuesManagement() {
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#fcf6db" }}>
       <Sidebar />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <Navbar title="Issues Management" />
+      <Navbar title="Issues Management" onSearch={(val) => setSearchTerm(val)}/>
         <div style={{ padding: "24px", flex: 1 }}>
 
           {/* KPI Cards */}
