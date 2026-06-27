@@ -40,7 +40,7 @@ function IssuesManagement() {
 
   const fetchIssues = () => {
     const query = timeFilter ? `?filter=${timeFilter}` : "";
-    API.get(`/issues${query}`)
+    API.get(`/inventory/issues${query}`)
       .then((res) => {
         setIssues(res.data.data);
         setLoading(false);

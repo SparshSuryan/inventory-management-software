@@ -1,18 +1,15 @@
 const prisma = require("../config/prisma");
 const { createAuditLog } = require("./auditControllers");
 
-// Helper — generate next receipt number (RCP-0001, RCP-0002...)
 const generateReceiptNumber = async () => {
   const lastReceipt = await prisma.receipt.findFirst({
     orderBy: { receipt_id: "desc" },
   });
-
   let nextNumber = 1;
   if (lastReceipt) {
     const lastNum = parseInt(lastReceipt.receipt_number.split("-")[1]);
     nextNumber = lastNum + 1;
   }
-
   return `RCP-${String(nextNumber).padStart(4, "0")}`;
 };
 
@@ -23,31 +20,19 @@ const getAllReceipts = async (req, res) => {
       include: { product: true },
       orderBy: { created_at: "desc" },
     });
-
-    res.status(200).json({
-      success: true,
-      data: receipts,
-    });
+    res.status(200).json({ success: true, data: receipts });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch receipts",
-    });
+    res.status(500).json({ success: false, message: "Failed to fetch receipts" });
   }
 };
 
 // POST /api/receipts/check-sku
-// Checks if a product with given SKU exists — used before creating receipt
 const checkSku = async (req, res) => {
   try {
     const { sku } = req.body;
-
     if (!sku) {
-      return res.status(400).json({
-        success: false,
-        message: "SKU is required",
-      });
+      return res.status(400).json({ success: false, message: "SKU is required" });
     }
 
     const product = await prisma.product.findUnique({
@@ -56,24 +41,13 @@ const checkSku = async (req, res) => {
     });
 
     if (!product) {
-      return res.status(200).json({
-        success: true,
-        exists: false,
-        message: "Product not found",
-      });
+      return res.status(200).json({ success: true, exists: false, message: "Product not found" });
     }
 
-    res.status(200).json({
-      success: true,
-      exists: true,
-      data: product,
-    });
+    res.status(200).json({ success: true, exists: true, data: product });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to check SKU",
-    });
+    res.status(500).json({ success: false, message: "Failed to check SKU" });
   }
 };
 
@@ -90,13 +64,9 @@ const createReceipt = async (req, res) => {
     }
 
     if (parseInt(quantity) <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Quantity must be a positive number",
-      });
+      return res.status(400).json({ success: false, message: "Quantity must be a positive number" });
     }
 
-    // Find product by SKU
     const product = await prisma.product.findUnique({
       where: { sku: String(sku) },
     });
@@ -108,16 +78,16 @@ const createReceipt = async (req, res) => {
       });
     }
 
-    // Find or check stock record
     let stock = await prisma.stock.findUnique({
       where: { product_id: product.product_id },
     });
 
     const receiptNumber = await generateReceiptNumber();
     const qty = parseInt(quantity);
+    const unitCost = unit_cost ? parseFloat(unit_cost) : product.unit_price;
+    const totalCost = unitCost * qty;
 
     const result = await prisma.$transaction(async (tx) => {
-      // Create stock record if doesn't exist
       if (!stock) {
         stock = await tx.stock.create({
           data: {
@@ -128,13 +98,11 @@ const createReceipt = async (req, res) => {
         });
       }
 
-      // Update stock quantity
       const updatedStock = await tx.stock.update({
         where: { product_id: product.product_id },
         data: { quantity: stock.quantity + qty },
       });
 
-      // Create stock movement
       await tx.stockMovement.create({
         data: {
           product_id: product.product_id,
@@ -147,40 +115,38 @@ const createReceipt = async (req, res) => {
         },
       });
 
-      // Create receipt record
-const unitCost = unit_cost ? parseFloat(unit_cost) : product.unit_price;
-const totalCost = unitCost * qty;
-
-const receipt = await tx.receipt.create({
-  data: {
-    receipt_number: receiptNumber,
-    product_id: product.product_id,
-    supplier,
-    quantity: qty,
-    unit_cost: unitCost,
-    total_cost: totalCost,
-    received_date: received_date ? new Date(received_date) : new Date(),
-    remarks: remarks || null,
-    created_by: null,
-  },
-  include: { product: true },
-});
+      const receipt = await tx.receipt.create({
+        data: {
+          receipt_number: receiptNumber,
+          product_id: product.product_id,
+          supplier,
+          quantity: qty,
+          unit_cost: unitCost,
+          total_cost: totalCost,
+          received_date: received_date ? new Date(received_date) : new Date(),
+          remarks: remarks || null,
+          created_by: null,
+        },
+        include: { product: true },
+      });
 
       return { receipt, updatedStock };
     });
 
+    // Audit log outside transaction so it never blocks the receipt creation
     await createAuditLog({
-      userId: req.user?.user_id || null,
+      userId: null,
       action: "CREATE",
       entityType: "Receipt",
       entityId: result.receipt.receipt_id,
       newValues: {
         receipt_number: result.receipt.receipt_number,
+        product_name: product.product_name,
         sku,
         supplier,
         quantity: qty,
-        unit_cost: result.receipt.unit_cost,
-        total_cost: result.receipt.total_cost,
+        unit_cost: unitCost,
+        total_cost: totalCost,
       },
     });
 
@@ -190,13 +156,9 @@ const receipt = await tx.receipt.create({
       data: result.receipt,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to create receipt",
-    });
+    console.error("Create receipt error:", error);
+    res.status(500).json({ success: false, message: "Failed to create receipt" });
   }
-
 };
 
 // POST /api/receipts/bulk
@@ -205,10 +167,7 @@ const bulkCreateReceipts = async (req, res) => {
     const { receipts } = req.body;
 
     if (!receipts || !Array.isArray(receipts) || receipts.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No receipts provided",
-      });
+      return res.status(400).json({ success: false, message: "No receipts provided" });
     }
 
     const results = [];
@@ -230,10 +189,12 @@ const bulkCreateReceipts = async (req, res) => {
 
       const receiptNumber = await generateReceiptNumber();
       const qty = parseInt(r.quantity) || 0;
-
       if (qty <= 0) continue;
 
-      await prisma.$transaction(async (tx) => {
+      const unitCost = r.unit_cost ? parseFloat(r.unit_cost) : product.unit_price;
+      const totalCost = unitCost * qty;
+
+      const receipt = await prisma.$transaction(async (tx) => {
         if (!stock) {
           stock = await tx.stock.create({
             data: {
@@ -261,45 +222,48 @@ const bulkCreateReceipts = async (req, res) => {
           },
         });
 
-const unitCost = r.unit_cost ? parseFloat(r.unit_cost) : product.unit_price;
-const totalCost = unitCost * qty;
-
-const receipt = await tx.receipt.create({
-  data: {
-    receipt_number: receiptNumber,
-    product_id: product.product_id,
-    supplier: r.supplier,
-    quantity: qty,
-    unit_cost: unitCost,
-    total_cost: totalCost,
-    received_date: r.received_date ? new Date(r.received_date) : new Date(),
-    remarks: r.remarks || null,
-    created_by: null,
-  },
-});
-
-        results.push(receipt);
+        return await tx.receipt.create({
+          data: {
+            receipt_number: receiptNumber,
+            product_id: product.product_id,
+            supplier: r.supplier,
+            quantity: qty,
+            unit_cost: unitCost,
+            total_cost: totalCost,
+            received_date: r.received_date ? new Date(r.received_date) : new Date(),
+            remarks: r.remarks || null,
+            created_by: null,
+          },
+        });
       });
+
+      await createAuditLog({
+        userId: null,
+        action: "CREATE",
+        entityType: "Receipt",
+        entityId: receipt.receipt_id,
+        newValues: {
+          receipt_number: receipt.receipt_number,
+          product_name: product.product_name,
+          sku: r.sku,
+          supplier: r.supplier,
+          quantity: qty,
+        },
+      });
+
+      results.push(receipt);
     }
 
     res.status(201).json({
       success: true,
-      message: `${results.length} receipts created successfully${notFound.length > 0 ? `. ${notFound.length} SKUs not found: ${notFound.join(", ")}` : ""}`,
+      message: `${results.length} receipts created successfully${notFound.length > 0 ? `. SKUs not found: ${notFound.join(", ")}` : ""}`,
       data: results,
       notFound,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to bulk create receipts",
-    });
+    console.error("Bulk create receipts error:", error);
+    res.status(500).json({ success: false, message: "Failed to bulk create receipts" });
   }
 };
 
-module.exports = {
-  getAllReceipts,
-  checkSku,
-  createReceipt,
-  bulkCreateReceipts,
-};
+module.exports = { getAllReceipts, checkSku, createReceipt, bulkCreateReceipts };

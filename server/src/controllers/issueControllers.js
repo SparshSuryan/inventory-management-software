@@ -7,7 +7,7 @@ const generateIssueNumber = async () => {
   return `ISS-${String(next).padStart(4, "0")}`;
 };
 
-// GET /api/issues
+// GET /api/inventory/issues
 const getAllIssues = async (req, res) => {
   try {
     const { filter } = req.query;
@@ -34,7 +34,7 @@ const getAllIssues = async (req, res) => {
   }
 };
 
-// POST /api/issues
+// POST /api/inventory/issues
 const createIssue = async (req, res) => {
   try {
     const { product_id, issue_type, stage, description } = req.body;
@@ -51,10 +51,7 @@ const createIssue = async (req, res) => {
     });
 
     if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
+      return res.status(404).json({ success: false, message: "Product not found" });
     }
 
     const issue_number = await generateIssueNumber();
@@ -68,14 +65,12 @@ const createIssue = async (req, res) => {
         description: description || null,
         status: "OPEN",
       },
-      include: {
-        product: { include: { category: true } },
-      },
+      include: { product: { include: { category: true } } },
     });
 
-    // Create audit log after issue is successfully created
+    // Create audit log — wrapped separately so it never blocks the response
     await createAuditLog({
-      userId: req.user?.user_id || null,
+      userId: null,
       action: "RAISE_ISSUE",
       entityType: "Issue",
       entityId: issue.issue_id,
@@ -84,7 +79,8 @@ const createIssue = async (req, res) => {
         issue_type: issue.issue_type,
         stage: issue.stage,
         product_id: issue.product_id,
-        status: issue.status,
+        product_name: product.product_name,
+        status: "OPEN",
       },
     });
 
@@ -95,14 +91,11 @@ const createIssue = async (req, res) => {
     });
   } catch (error) {
     console.error("Create issue error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to create issue",
-    });
+    return res.status(500).json({ success: false, message: "Failed to create issue" });
   }
 };
 
-// PUT /api/issues/:id/resolve
+// PUT /api/inventory/issues/:id/resolve
 const resolveIssue = async (req, res) => {
   try {
     const { id } = req.params;
@@ -112,41 +105,28 @@ const resolveIssue = async (req, res) => {
     });
 
     if (!issue) {
-      return res.status(404).json({
-        success: false,
-        message: "Issue not found",
-      });
+      return res.status(404).json({ success: false, message: "Issue not found" });
     }
 
     if (issue.status === "RESOLVED") {
-      return res.status(400).json({
-        success: false,
-        message: "Issue is already resolved",
-      });
+      return res.status(400).json({ success: false, message: "Issue is already resolved" });
     }
 
     const updated = await prisma.issue.update({
       where: { issue_id: parseInt(id) },
-      data: {
-        status: "RESOLVED",
-        resolved_at: new Date(),
-      },
-      include: {
-        product: { include: { category: true } },
-      },
+      data: { status: "RESOLVED", resolved_at: new Date() },
+      include: { product: { include: { category: true } } },
     });
 
-    // Add this resolved action to Audit Log
     await createAuditLog({
-      userId: req.user?.user_id || null,
+      userId: null,
       action: "RESOLVE_ISSUE",
       entityType: "Issue",
       entityId: updated.issue_id,
-      oldValues: {
-        status: issue.status,
-      },
+      oldValues: { status: issue.status },
       newValues: {
-        status: updated.status,
+        issue_number: issue.issue_number,
+        status: "RESOLVED",
         resolved_at: updated.resolved_at,
       },
     });
@@ -158,17 +138,22 @@ const resolveIssue = async (req, res) => {
     });
   } catch (error) {
     console.error("Resolve issue error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to resolve issue",
-    });
+    return res.status(500).json({ success: false, message: "Failed to resolve issue" });
   }
 };
 
-// PUT /api/issues/:id/progress
+// PUT /api/inventory/issues/:id/progress
 const markInProgress = async (req, res) => {
   try {
     const { id } = req.params;
+
+    const issue = await prisma.issue.findUnique({
+      where: { issue_id: parseInt(id) },
+    });
+
+    if (!issue) {
+      return res.status(404).json({ success: false, message: "Issue not found" });
+    }
 
     const updated = await prisma.issue.update({
       where: { issue_id: parseInt(id) },
@@ -176,9 +161,18 @@ const markInProgress = async (req, res) => {
       include: { product: { include: { category: true } } },
     });
 
+    await createAuditLog({
+      userId: null,
+      action: "UPDATE",
+      entityType: "Issue",
+      entityId: updated.issue_id,
+      oldValues: { status: issue.status },
+      newValues: { status: "IN_PROGRESS" },
+    });
+
     res.status(200).json({
       success: true,
-      message: `Issue marked as In Progress`,
+      message: "Issue marked as In Progress",
       data: updated,
     });
   } catch (error) {
@@ -187,7 +181,7 @@ const markInProgress = async (req, res) => {
   }
 };
 
-// GET /api/issues/summary — for dashboard
+// GET /api/inventory/issues/summary
 const getIssuesSummary = async (req, res) => {
   try {
     const [total, open, inProgress, resolved] = await Promise.all([

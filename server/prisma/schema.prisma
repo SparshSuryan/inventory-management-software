@@ -92,7 +92,7 @@ model StockAlert {
 
 model AuditLog {
   log_id      Int      @id @default(autoincrement())
-  user_id     Int
+  user_id     Int?
   action      String
   entity_type String
   entity_id   Int
