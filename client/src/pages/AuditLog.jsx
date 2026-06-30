@@ -160,15 +160,24 @@ function AuditLog() {
                             <div style={{ color: "#888", fontSize: "11px" }}>{log.user?.role?.toUpperCase() || "—"}</div>
                           </div>
                         </td>
-                        <td style={{ ...tdStyle, maxWidth: "200px", fontSize: "11px", textAlign: "left" }}>
-                          {log.new_values ? (
-                            <div style={{ backgroundColor: "#f0f8ff", padding: "4px 8px", borderRadius: "4px", fontFamily: "monospace" }}>
-                              {JSON.stringify(JSON.parse(log.new_values), null, 0).slice(0, 80)}
-                              {log.new_values.length > 80 ? "..." : ""}
-                            </div>
-                          ) : "—"}
-                        </td>
-                        <td style={tdStyle}>{new Date(log.created_at).toLocaleString("en-IN")}</td>
+                        <td style={{ ...tdStyle, maxWidth: "220px", fontSize: "11px", textAlign: "left", verticalAlign: "top" }}>
+  {log.new_values ? (
+    <div style={{
+      backgroundColor: "#f0f8ff",
+      padding: "6px 8px",
+      borderRadius: "4px",
+      fontFamily: "monospace",
+      maxWidth: "200px",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+    }}>
+      {JSON.stringify(JSON.parse(log.new_values), null, 0).slice(0, 60)}
+      {log.new_values.length > 60 ? "..." : ""}
+    </div>
+  ) : "—"}
+</td>
+<td style={{ ...tdStyle, fontSize: "11px" }}>{new Date(log.created_at).toLocaleString("en-IN")}</td>
                       </tr>
                     );
                   })}
@@ -184,7 +193,15 @@ function AuditLog() {
 }
 
 const thStyle = { padding: "10px", textAlign: "center", fontSize: "13px", fontWeight: "600", color: "#004aad", borderBottom: "2px solid #e8d9b0", borderRight: "1px solid #e8d9b0" };
-const tdStyle = { padding: "10px", textAlign: "center", fontSize: "13px", borderBottom: "1px solid #e8d9b0", borderRight: "1px solid #e8d9b0", color: "#333" };
+const tdStyle = {
+    padding: "10px",
+    textAlign: "center",
+    fontSize: "13px",
+    borderBottom: "1px solid #e8d9b0",
+    borderRight: "1px solid #e8d9b0",
+    color: "#333",
+    whiteSpace: "nowrap",
+  };
 const selectStyle = { padding: "8px 12px", border: "1.5px solid #004aad", borderRadius: "6px", fontSize: "13px", backgroundColor: "white", color: "#004aad" };
 const btnExport = { backgroundColor: "#5cb85c", color: "white", padding: "10px 20px", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "500" };
 

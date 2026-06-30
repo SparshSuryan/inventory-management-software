@@ -56,7 +56,7 @@ app.use("/api/receipts", receiptRoutes);
 app.use("/api/transfers", transferRoutes);
 
 //Issues API
-app.use("/api/issues", issueRoutes);
+app.use("/api/inventory/issues", issueRoutes);
 
 //Dashboard API
 app.use("/api/dashboard", dashboardRoutes);
