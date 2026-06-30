@@ -4,6 +4,18 @@ import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { formatINR } from "../utils/formatCurrency";
+import {
+  PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+} from "recharts";
+
+const STOCK_COLORS = {
+  "Surplus": "#5cb85c",
+  "Sufficient": "#5bc0de",
+  "Low Stock": "#f0ad4e",
+  "Out of Stock": "#d9534f",
+};
+const STAGE_COLORS = ["#004aad", "#5bc0de", "#5cb85c", "#777"];
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -71,6 +83,63 @@ function Dashboard() {
               </div>
             ))}
           </div>
+
+          {/* Charts Row */}
+<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+
+{/* Pie Chart — Stock Status Distribution */}
+<div style={{ backgroundColor: "white", borderRadius: "12px", border: "1.5px solid #004aad", padding: "16px" }}>
+  <h3 style={{ color: "#004aad", marginBottom: "10px", fontSize: "15px" }}>📊 Inventory Status Distribution</h3>
+  {data.charts?.stockStatus && data.charts.stockStatus.some((s) => s.value > 0) ? (
+    <ResponsiveContainer width="100%" height={260}>
+      <PieChart>
+        <Pie
+          data={data.charts.stockStatus}
+          dataKey="value"
+          nameKey="name"
+          cx="50%"
+          cy="50%"
+          outerRadius={85}
+          label={({ name, value }) => value > 0 ? `${name}: ${value}` : ""}
+        >
+          {data.charts.stockStatus.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={STOCK_COLORS[entry.name] || "#999"} />
+          ))}
+        </Pie>
+        <Tooltip />
+        <Legend wrapperStyle={{ fontSize: "12px" }} />
+      </PieChart>
+    </ResponsiveContainer>
+  ) : (
+    <p style={{ textAlign: "center", color: "#999", padding: "40px 0" }}>No stock data available</p>
+  )}
+</div>
+
+{/* Bar Chart — Inventory Value by Stage */}
+<div style={{ backgroundColor: "white", borderRadius: "12px", border: "1.5px solid #004aad", padding: "16px" }}>
+  <h3 style={{ color: "#004aad", marginBottom: "10px", fontSize: "15px" }}>📦 Inventory Value by Stage</h3>
+  {data.inventory.byStage && data.inventory.byStage.length > 0 ? (
+    <ResponsiveContainer width="100%" height={260}>
+      <BarChart data={data.inventory.byStage} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#e8d9b0" />
+        <XAxis dataKey="category" tick={{ fontSize: 11 }} />
+        <YAxis tick={{ fontSize: 11 }} />
+        <Tooltip
+          formatter={(value, name) => name === "totalValue" ? [`₹${value.toLocaleString("en-IN")}`, "Value"] : [value, name]}
+        />
+        <Bar dataKey="totalValue" radius={[6, 6, 0, 0]}>
+          {data.inventory.byStage.map((entry, index) => (
+            <Cell key={`bar-${index}`} fill={STAGE_COLORS[index % STAGE_COLORS.length]} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  ) : (
+    <p style={{ textAlign: "center", color: "#999", padding: "40px 0" }}>No inventory data available</p>
+  )}
+</div>
+
+</div>
 
           {/* Main Content — 2 columns */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>

@@ -60,17 +60,31 @@ const getDashboardSummary = async (req, res) => {
     // Transfers
     const totalTransfers = await prisma.inventoryTransfer.count();
 
-    res.status(200).json({
-      success: true,
-      data: {
-        products: { total: totalProducts, lowStock, outOfStock, totalInventoryValue },
-        receipts: { total: totalReceipts, recent: recentReceipts },
-        issues: { total: totalIssues, open: openIssues, inProgress: inProgressIssues, resolved: resolvedIssues, unresolved: unresolvedIssues },
-        inventory: { byStage: inventoryByStage },
-        movements: { recent: recentMovements },
-        transfers: { total: totalTransfers },
-      },
-    });
+    const stockStatusBreakdown = { Surplus: 0, Sufficient: 0, "Low Stock": 0, "Out of Stock": 0 };
+products.forEach((p) => {
+  if (!p.stock) return;
+  const qty = p.stock.quantity;
+  const reorder = p.stock.reorder_level;
+  if (qty === 0) stockStatusBreakdown["Out of Stock"]++;
+  else if (qty <= reorder) stockStatusBreakdown["Low Stock"]++;
+  else if (qty <= reorder * 2) stockStatusBreakdown["Sufficient"]++;
+  else stockStatusBreakdown["Surplus"]++;
+});
+
+const stockStatusChart = Object.entries(stockStatusBreakdown).map(([name, value]) => ({ name, value }));
+
+res.status(200).json({
+  success: true,
+  data: {
+    products: { total: totalProducts, lowStock, outOfStock, totalInventoryValue },
+    receipts: { total: totalReceipts, recent: recentReceipts },
+    issues: { total: totalIssues, open: openIssues, inProgress: inProgressIssues, resolved: resolvedIssues, unresolved: unresolvedIssues },
+    inventory: { byStage: inventoryByStage },
+    movements: { recent: recentMovements },
+    transfers: { total: totalTransfers },
+    charts: { stockStatus: stockStatusChart },
+  },
+});
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Failed to fetch dashboard data" });
