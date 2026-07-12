@@ -1,10 +1,12 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import logo from "../assets/MACE_logo.png";
+import { isAdmin } from "../utils/auth";
 
 function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const admin = isAdmin();
 
   // Keep Receipt dropdown open if on any receipt-related page
   const isReceiptPage = ["/receipt/receipts", "/receipt/transfers", "/stock", "/sales"].includes(location.pathname);
@@ -135,9 +137,11 @@ function Sidebar() {
         </div>
 
         {/* Audit Log */}
+        { admin && ( 
         <div style={navItemStyle("/audit")} onClick={() => navigate("/audit")}>
           Audit Log
         </div>
+        )}
 
       </nav>
     </div>

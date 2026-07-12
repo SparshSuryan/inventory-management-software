@@ -4,8 +4,10 @@ import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import ReceiptBulkUploadModal from "../components/ReceiptBulkUploadModal";
+import AIReceiptScanner from "../components/AIReceiptScanner";
 import { formatINR } from "../utils/formatCurrency";
 import { exportToCSV } from "../utils/exportCSV";
+import { isAdmin } from "../utils/auth";
 
 const emptyForm = {
     sku: "",
@@ -38,6 +40,9 @@ function Receipts() {
 
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showAIScanner, setShowAIScanner] = useState(false);
+
+  const admin = isAdmin();
 
   const fetchReceipts = () => {
     API.get("/receipts")
@@ -185,23 +190,63 @@ function Receipts() {
         <div style={{ padding: "24px", flex: 1 }}>
 
           {/* Header row */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
   <div>
     <h2 style={{ color: "#004aad", margin: 0 }}>Receipts</h2>
-    <p style={{ color: "#666", fontSize: "13px", marginTop: "4px" }}>
+    <p style={{ color: "#666", fontSize: "13px", marginTop: "4px", maxWidth: "700px" }}>
       Record incoming raw material from suppliers. Finished product stock is managed via Inventory Transfers.
     </p>
   </div>
-  <div style={{ display: "flex", gap: "10px" }}>
-    <button onClick={() => setShowBulkModal(true)} style={btnUpload}>
-      Upload Bulk Receipts +
+  <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+    { admin && ( 
+    <button
+      onClick={() => setShowAIScanner(true)}
+      style={{
+        backgroundColor: "#6f42c1", color: "white",
+        padding: "9px 16px", border: "none",
+        borderRadius: "6px", cursor: "pointer",
+        fontSize: "13px", fontWeight: "500",
+        whiteSpace: "nowrap",
+      }}
+    >
+      🤖 AI Scan
     </button>
-    <button onClick={handleAddClick} style={btnAdd}>
+    )}
+
+    {admin && ( 
+    <button onClick={() => setShowBulkModal(true)} style={{
+      backgroundColor: "#5bc0de", color: "white",
+      padding: "9px 16px", border: "none",
+      borderRadius: "6px", cursor: "pointer",
+      fontSize: "13px", fontWeight: "500",
+      whiteSpace: "nowrap",
+    }}>
+      Upload Bulk +
+    </button>
+    )}
+    
+    {admin && (
+    <button onClick={handleAddClick} style={{
+      backgroundColor: "#004aad", color: "white",
+      padding: "9px 16px", border: "none",
+      borderRadius: "6px", cursor: "pointer",
+      fontSize: "13px", fontWeight: "500",
+      whiteSpace: "nowrap",
+    }}>
       + Add Receipt
     </button>
-    <button onClick={handleExport} style={btnExport}>
-  Export CSV ↓
-</button>
+    )}
+ 
+    <button onClick={handleExport} style={{
+      backgroundColor: "#5cb85c", color: "white",
+      padding: "9px 16px", border: "none",
+      borderRadius: "6px", cursor: "pointer",
+      fontSize: "13px", fontWeight: "500",
+      whiteSpace: "nowrap",
+    }}>
+      Export CSV ↓
+    </button>
+
   </div>
 </div>
 
@@ -214,7 +259,7 @@ function Receipts() {
           )}
 
           {/* Add Receipt Form */}
-          {showForm && (
+          {showForm && admin && (
             <div style={{
               backgroundColor: "white",
               padding: "20px",
@@ -437,6 +482,48 @@ function Receipts() {
   />
 )}
 
+{showAIScanner && (
+  <AIReceiptScanner
+    onClose={() => setShowAIScanner(false)}
+    onScanSuccess={(data) => {
+      setFormData({
+        sku: data.sku || "",
+        supplier: data.supplier || "",
+        quantity: data.quantity || "",
+        unit_cost: data.unit_cost || "",
+        received_date: data.received_date || "",
+        remarks: data.remarks || "",
+      });
+    
+      setSkuChecked(false);
+      setSkuExists(null);
+      setFoundProduct(null);
+      setShowCreatePrompt(false);
+    
+      setShowAIScanner(false);
+      setShowForm(true);
+    
+      // Automatically validate the extracted SKU
+      if (data.sku) {
+        setTimeout(() => {
+          API.post("/receipts/check-sku", { sku: data.sku })
+            .then((res) => {
+              setSkuChecked(true);
+              setSkuExists(res.data.exists);
+    
+              if (res.data.exists) {
+                setFoundProduct(res.data.data);
+              } else {
+                setShowCreatePrompt(true);
+              }
+            })
+            .catch(() => {});
+        }, 100);
+      }
+    }}
+  />
+)}
+
         </div>
       </div>
     </div>
@@ -483,6 +570,16 @@ const btnExport = {
     padding: "10px 20px", border: "none",
     borderRadius: "6px", cursor: "pointer",
     fontSize: "14px", fontWeight: "500",
+};
+const btnAIScan = {
+  backgroundColor: "#7b1fa2",
+  color: "white",
+  padding: "10px 20px",
+  border: "none",
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontSize: "12px",
+  fontWeight: "500",
 };
 
 export default Receipts;

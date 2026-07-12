@@ -3,6 +3,7 @@ import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { exportToCSV } from "../utils/exportCSV";
+import { isAdmin } from "../utils/auth";
 
 const ISSUE_TYPES = [
   { value: "LOW_STOCK", label: "Low Stock", color: "#f0ad4e", bg: "#fefaf2" },
@@ -30,6 +31,7 @@ function IssuesManagement() {
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const admin = isAdmin();
 
   const [formData, setFormData] = useState({
     product_id: "",
@@ -205,9 +207,12 @@ function IssuesManagement() {
               )}
             </div>
             <div style={{display: "flex", gap: "10px"}}>
+            { admin && ( 
             <button onClick={() => { setShowForm(true); setFormError(null); setFormSuccess(null); }} style={btnPrimary}>
               + Raise Issue
             </button>
+            )}
+
             <button onClick={handleExport} style={btnExport}>
                 Export CSV ↓
             </button>
@@ -319,18 +324,21 @@ function IssuesManagement() {
                         <td style={tdStyle}>{new Date(issue.created_at).toLocaleDateString()}</td>
                         <td style={tdStyle}>
                           <div style={{ display: "flex", gap: "6px", justifyContent: "center", flexWrap: "wrap" }}>
-                            {issue.status === "OPEN" && (
+                            {admin && issue.status === "OPEN" && (
                               <button onClick={() => handleProgress(issue.issue_id)} style={btnProgress}>
                                 In Progress
                               </button>
                             )}
-                            {issue.status !== "RESOLVED" && (
+                            {admin && issue.status !== "RESOLVED" && (
                               <button onClick={() => handleResolve(issue.issue_id)} style={btnResolve}>
                                 Resolve ✓
                               </button>
                             )}
                             {issue.status === "RESOLVED" && (
                               <span style={{ color: "#5cb85c", fontSize: "12px", fontWeight: "600" }}>✓ Resolved</span>
+                            )}
+                            {!admin && issue.status !== "RESOLVED" && (
+                              <span style={{ color: "#f0ad4e", fontSize: "12px", fontWeight: "600" }}>Pending Resolution</span>
                             )}
                           </div>
                         </td>

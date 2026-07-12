@@ -188,8 +188,8 @@ function AuditLog() {
 
         </div>
       </div>
-    </div>
-  );
+    </div>  
+);
 }
 
 const thStyle = { padding: "10px", textAlign: "center", fontSize: "13px", fontWeight: "600", color: "#004aad", borderBottom: "2px solid #e8d9b0", borderRight: "1px solid #e8d9b0" };

@@ -6,6 +6,7 @@ import Navbar from "../components/Navbar";
 import BulkUploadModal from "../components/BulkUploadModal";
 import { formatINR } from "../utils/formatCurrency";
 import { exportToCSV } from "../utils/exportCSV";
+import { isAdmin } from "../utils/auth";
 
 const emptyForm = {
   product_name: "",
@@ -34,6 +35,7 @@ function Products() {
   const [sortBy, setSortBy] = useState("");
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [showSortPanel, setShowSortPanel] = useState(false);
+  const admin = isAdmin();
 
   // Stats
   const [stats, setStats] = useState({
@@ -412,15 +414,21 @@ const uniqueSuppliers = [...new Set(products.map((p) => p.supplier).filter(Boole
       </div>
     )}
 
+
+    { admin && ( 
     <button onClick={handleAddClick} style={btnAdd}>
       Add Product +
     </button>
+    )}
+
+    { admin && (
     <button style={btnUpload} onClick={() => setShowBulkModal(true)}>
       Upload Bulk +
     </button>
+    )}
     <button onClick={handleExport} style={btnExport}>
-  Export CSV ↓
-</button>
+      Export CSV ↓
+    </button>
   </div>
 </div>
 
@@ -433,7 +441,7 @@ const uniqueSuppliers = [...new Set(products.map((p) => p.supplier).filter(Boole
           )}
 
           {/* Add / Edit Form */}
-          {showForm && (
+          {showForm && admin && (
             <div style={{
               backgroundColor: "white",
               padding: "20px",
@@ -612,14 +620,22 @@ const uniqueSuppliers = [...new Set(products.map((p) => p.supplier).filter(Boole
                       <td style={tdStyle}>{formatINR(product.unit_price)}</td>
                       <td style={tdStyle}>{product.description || "—"}</td>
                       <td style={tdStyle}>
+                        { admin && ( 
                         <button
                           onClick={() => handleEditClick(product)}
                           style={btnEditRow}
                         >Edit</button>
+                        )}
+
+                        { admin && ( 
                         <button
                           onClick={() => handleDelete(product.product_id, product.product_name)}
                           style={btnDeleteRow}
                         >Delete</button>
+                        )}
+                        {!admin && (
+                          <span style={{ color: "#999", fontSize: "12px" }}>View only</span>
+                        )}
                       </td>
                     </tr>
                   ))}

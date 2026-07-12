@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
@@ -35,6 +36,8 @@ const salesRoutes = require("./src/routes/salesRoutes");
 
 const auditRoutes = require("./src/routes/auditRoutes");
 
+const receiptScanRoutes = require("./src/routes/receiptScanRoutes");
+
 // Root Route
 app.get("/", (req, res) => {
     res.send("Inventory Management Software Backend Running");
@@ -48,6 +51,9 @@ app.use("/api/categories", categoryRoutes);
 
 //Stocks API
 app.use("/api/stock", stockRoutes);
+
+// AI Receipt Scanner API
+app.use("/api/receipts", receiptScanRoutes);
 
 //Receipts API
 app.use("/api/receipts", receiptRoutes);

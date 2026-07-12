@@ -3,6 +3,7 @@ import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { exportToCSV } from "../utils/exportCSV";
+import { isAdmin } from "../utils/auth";
 
 function InventoryTransfers() {
   const [transfers, setTransfers] = useState([]);
@@ -13,6 +14,7 @@ function InventoryTransfers() {
   const [formError, setFormError] = useState(null);
   const [formSuccess, setFormSuccess] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const admin = isAdmin();
 
   const [formData, setFormData] = useState({
     product_id: "",
@@ -162,9 +164,12 @@ console.log(
             <button onClick={handleExport} style={btnExport}>
                 Export CSV ↓
             </button>
+
+            { admin && ( 
             <button onClick={() => { setShowForm(true); setFormError(null); setFormSuccess(null); }} style={btnPrimary}>
               + New Transfer
             </button>
+            )}
             </div>
           </div>
 
@@ -173,7 +178,7 @@ console.log(
           {formError && <p style={{ color: "red", fontWeight: "500", marginBottom: "12px" }}>{formError}</p>}
 
           {/* Transfer Form */}
-          {showForm && (
+          {showForm && admin && (
             <div style={{ backgroundColor: "white", padding: "20px", borderRadius: "10px", border: "1px solid #ddd", marginBottom: "20px" }}>
               <h3 style={{ marginBottom: "16px", color: "#004aad" }}>Create New Transfer</h3>
               <form onSubmit={handleSubmit}>
