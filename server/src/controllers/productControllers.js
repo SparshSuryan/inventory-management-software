@@ -154,15 +154,18 @@ const deleteProduct = async (req, res) => {
       oldValues: { product_name: existing.product_name, sku: existing.sku },
     });
 
+    // Delete in correct order — children first, then parent
     await prisma.stockMovement.deleteMany({ where: { product_id: parseInt(id) } });
     await prisma.stockAlert.deleteMany({ where: { product_id: parseInt(id) } });
     await prisma.issue.deleteMany({ where: { product_id: parseInt(id) } });
+    await prisma.receipt.deleteMany({ where: { product_id: parseInt(id) } });
+    await prisma.inventoryTransfer.deleteMany({ where: { product_id: parseInt(id) } });
     await prisma.stock.deleteMany({ where: { product_id: parseInt(id) } });
     await prisma.product.delete({ where: { product_id: parseInt(id) } });
 
     res.status(200).json({ success: true, message: "Product deleted successfully" });
   } catch (error) {
-    console.error(error);
+    console.error("Delete product error:", error.message);
     res.status(500).json({ success: false, message: "Failed to delete product" });
   }
 };
